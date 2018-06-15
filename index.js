@@ -43,35 +43,81 @@ class Crawler {
 				servicePark: 7
 			}
 		}
+
+		this.urls = {
+			preffix: 'http://www.wrc.com/en/wrc/',
+			rallyList: 'calendar/calendar/page/671-206-16--.html'
+		}
 	}
+	// PUBLIC methods
 	async exec() {
 		// initialize browser
 		await this.__openBrowser();
-
-
-
+		await this.__crawlAllRallies();
 		// we're done with crawling, bye for now
 		await this.__closeBrowser();
 	}
-
-	async __crawlPage() {
-
+	// PRIVATE methods
+	async __crawlBrowser(selector) {
+		return await this.browser.crawl(selector);
 	}
 
 	async __openBrowser() {
-		this.browser = new BrowserModule(false);
+		this.browser = new BrowserModule(true);
 		await this.browser.start();
 	} 
 
 	async __closeBrowser() {
-		this.browser.close();
+		await this.browser.close();
+	}
+
+	async __navigateBrowser(path) {
+		await this.browser.navigate(`${this.urls.preffix}${path}`);
+	}
+	// Crawling methods
+	async __crawlAllRallies() {
+		await this.__navigateBrowser('calendar/calendar/page/671-206-16--.html');
+		// for cheerio operation
+		var $ = cheerio.load(await this.__crawlBrowser('.news .data tbody')),
+			rallyInfos = [],
+			rallyLinks = [],
+			resultLinks = [];
+		// find all links, divide them into two groups
+		$('a').each(function() {
+			let rallyInfo = {},
+				acronym = $(this).find('img').attr('src'),
+				link = $(this).attr('href').slice(8);
+			// rally acronym, extracted from IMG src
+			if (acronym) {
+				rallyInfo['acronym'] = acronym.slice(acronym.lastIndexOf('/') + 2, acronym.indexOf('_'));
+				// parse full rally name
+				let name = $(this).html()
+				rallyInfo['name'] = name.slice(name.indexOf('>') + 1).trim();
+				rallyInfos.push(rallyInfo);
+			}	
+			// sort links according to type
+			if (link.indexOf('results') > -1) {
+				resultLinks.push(link);
+			} else if (link.indexOf('calendar') > -1) {
+				if (rallyLinks.indexOf(link) === -1)
+					rallyLinks.push(link);
+			}
+		});
+
+		// save rallies to database
+		console.log(rallyInfos);
+		console.log(rallyLinks);
+		console.log(resultLinks);
+	}
+
+	async __crawlRallyInfo(path) {
+
 	}
 }
 
 var crawler = new Crawler({
     parseAll: true
 });
-
 
 crawler.exec();
 
@@ -115,8 +161,7 @@ function parseDate(dt) {
 
 
 async function readStartList(page) {
-	// navigate to page
-    await page.goto('http://www.wrc.com/en/wrc/livetiming/page/4175----.html');
+	await loadPage(page, 'livetiming/page/4175----.html');
     // go to 'Overlay page'
     const allResultsSelector = `.liveCenterContent > ul > li:nth-of-type(${menuMap.startlist}) > a`;
   	await page.waitForSelector(allResultsSelector);
@@ -218,7 +263,7 @@ async function readRallyDetail(page, url) {
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
     
-    //await readStartList(page);
+    await readStartList(page);
     //await readAllRallies(page);
    	//await readRallyDetail(page, 'calendar/finland-2018/page/699--699-682-.html');
 
