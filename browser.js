@@ -1,6 +1,6 @@
 const puppeteer = require('puppeteer');
 
-module.export = class Browser {
+module.exports = class Browser {
 	constructor(headless) {
 		this.headless = headless;
 	}

@@ -2,20 +2,26 @@ const puppeteer = require('puppeteer');
 const fs = require('fs');
 const cheerio = require('cheerio');
 // library for conversion of HTML entities to Unicode strings
-const Entities = require('html-entities').XmlEntities;
-const entities = new Entities();
+const EntitiesModule = require('html-entities').XmlEntities;
+const entities = new EntitiesModule();
 // puppetter instance wrapped in our wrapper
-const Browser = require('./browser.js');
+const BrowserModule = require('./browser.js');
+/*const browser = new BrowserModule(false);
+
+(async function run() {
+	await browser.start();
+	await browser.close();
+})();*/
 
 
-class WRCParser {
+class Crawler {
 	constructor(opts) {
 		if (!opts.hasOwnProperty('parseAll')) 
 			throw 'Unknown options object passed while creating parser';
 		// select what we want to scrape
 
 		// initialize connection to the database
-	
+
 		// add items
 		this.blueprint = {
 			live: {
@@ -38,10 +44,46 @@ class WRCParser {
 			}
 		}
 	}
-	exec() {
-		// start parsing
+	async exec() {
+		// initialize browser
+		await this.__openBrowser();
+
+
+
+		// we're done with crawling, bye for now
+		await this.__closeBrowser();
+	}
+
+	async __crawlPage() {
+
+	}
+
+	async __openBrowser() {
+		this.browser = new BrowserModule(false);
+		await this.browser.start();
+	} 
+
+	async __closeBrowser() {
+		this.browser.close();
 	}
 }
+
+var crawler = new Crawler({
+    parseAll: true
+});
+
+
+crawler.exec();
+
+
+
+
+
+
+
+
+
+
 
 
 // main menu mapping
@@ -175,11 +217,6 @@ async function readRallyDetail(page, url) {
 (async function scrape() {
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
-
-    var parser = new WRCParser({
-    	parseAll: true
-    });
-    parser.exec();
     
     //await readStartList(page);
     //await readAllRallies(page);
