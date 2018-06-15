@@ -4,6 +4,8 @@ const cheerio = require('cheerio');
 // library for conversion of HTML entities to Unicode strings
 const Entities = require('html-entities').XmlEntities;
 const entities = new Entities();
+// puppetter instance wrapped in our wrapper
+const Browser = require('./browser.js');
 
 
 class WRCParser {
@@ -24,7 +26,7 @@ class WRCParser {
 				startlist: 7,
 				penalties: 8,
 				retirement: 9
-			}
+			},
 			detail: {
 				from: 1,
 				to: 2,
@@ -213,4 +215,4 @@ async function readRallyDetail(page, url) {
 
     // close the browser window
     browser.close();
-})();
+});
