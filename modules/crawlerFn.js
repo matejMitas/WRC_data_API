@@ -9,7 +9,6 @@
  * TODO: show tree structure.
  * @author contact@matejmitas.com (Matěj Mitaš)
  */
-
 const cheerio = require('cheerio');
 const EntitiesModule = require('html-entities').XmlEntities;
 const entities = new EntitiesModule();
