@@ -1,6 +1,9 @@
 const fs = require('fs');
 const cheerio = require('cheerio');
 const JSONFormatter = require("simple-json-formatter");
+// library for conversion of HTML entities to Unicode strings
+const EntitiesModule = require('html-entities').XmlEntities;
+const entities = new EntitiesModule();
 
 const startSelectors = {
 	crewNo: `td:nth-of-type(1)`,
@@ -17,6 +20,21 @@ function extractText(data) {
 		data[index] = item.trim();
 	});
 	return data;
+}
+
+function createDate(array, offset) {
+	let len = array.length;
+	if (len < 3 || len > 5) {
+		throw 'Date can be create either to day precision or to minute precision, nothing else';
+	}
+	// Date constructor is not content with strings
+	array.forEach(function(elem, index){
+		array[index] = parseInt(elem);
+	});
+	// normalization for full date range
+	if (len === 3)
+		array.push(0, 0);
+	return new Date(array[2], array[1] - 1, array[0], array[3] + 1 - offset, array[4]);
 }
 
 function scrapeStartList(data) {
@@ -87,10 +105,38 @@ function scrapeStartList(data) {
 	return startList;
 }
 
-function scrapeItinerary(data) {
 
-}
+const stageSelectors = {
+	stageNo: `td:nth-of-type(1)`,
+	stageName: `td:nth-of-type(2) a`,
+	stageLen: `td:nth-of-type(3)`,
+	stageStart: `td:nth-of-type(4)`,
+	stageStatus: `td:nth-of-type(5)`
+};
 
+/*fs.readFile('source/itinerary.html', 'utf-8', (err, data) => {
+	if (err) throw err;
+	var $ = cheerio.load(data),
+		stages = [];
+
+	var offset = -5;
+
+	$('tbody').each(function() {
+		var day = $(this).find('tr:first-of-type td strong').html().split('-')[1].trim().split('.');
+
+		$(this).find('tr:nth-of-type(n+2)').each(function(){
+			let stage = {};
+			stage['stageNo'] = $(this).find(stageSelectors.stageNo).html();
+			stage['stageName'] = entities.decode($(this).find(stageSelectors.stageName).html().trim());
+			stage['stageLen'] = parseFloat($(this).find(stageSelectors.stageLen).html());
+			stage['stageStart'] = createDate(day.concat($(this).find(stageSelectors.stageStart).html().trim().split(':')), offset);
+			stage['stageStatus'] = $(this).find(stageSelectors.stageStatus).html().trim();
+
+			stages.push(stage);
+		});
+	});
+	console.log(stages);
+});*/
 
 fs.readFile('out.html', 'utf-8', (err, data) => {
 	if (err) throw err;
@@ -100,3 +146,32 @@ fs.readFile('out.html', 'utf-8', (err, data) => {
 	    console.log('Start list sucessfully scraped and saved');
 	});
 });
+
+/*fs.readFile('source/text.html', 'utf-8', (err, data) => {
+	if (err) throw err;
+	data = entities.decode(data);
+
+	var $ = cheerio.load(data);
+	$('p').each(function() {
+		let articleType = $(this).find('span').attr('class').split(' ')[1];
+		if (articleType === 'comment') {
+			let heading, text, indexes;
+
+			$(this).find('span').remove();
+			heading = entities.decode($(this).find('strong').html()).trim().split(' ');
+
+			$(this).find('strong').remove();
+			text = entities.decode($(this).html()),
+			indexes = [text.indexOf('"'), text.lastIndexOf('"')];
+			if (indexes[0] > -1 && indexes[1] > -1) {
+				console.log('\n---------');
+				console.log(heading);
+				console.log(text.slice(indexes[0]+1, indexes[1]));
+			}
+		}
+		// console.log($(this).find('span').attr('class'));
+		//console.log($(this).find('strong').html());
+	});
+});*/
+
+
