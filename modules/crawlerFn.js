@@ -1,9 +1,24 @@
+/**
+ * @fileoverview Crawling methods for crawler
+ *
+ * This is where the business logic sits. 'wrc.com' is
+ * built as a classical server rendered app despite trying
+ * to convey remotely similar SPA-alike look. Here are all the 
+ * necessary functions for crawling individual pages, below
+ * is depicted operation mode:
+ * TODO: show tree structure.
+ * @author contact@matejmitas.com (Matěj Mitaš)
+ */
+
 const cheerio = require('cheerio');
 const EntitiesModule = require('html-entities').XmlEntities;
 const entities = new EntitiesModule();
 
 module.exports = {
-	
+	/**
+   	 * Crawl rally calendar, basic info about all rallies
+   	 * First function to execute
+     */
 	__crawlAllRallies: async function() {
 		await this.__navigateBrowser('calendar/calendar/page/671-206-16--.html', true);
 		// for cheerio operation
@@ -38,7 +53,11 @@ module.exports = {
 		console.log(resultLinks);
 	},
 
-
+	/**
+   	 * Get rally's detailed info (distance, liason...) 
+   	 * Executed from __crawlAllRallies
+   	 * @param path wrc.com's url path to particular event
+     */
 	__crawlRallyInfo: async function(path) {
 		await this.__navigateBrowser(path, true);
 		var $ 			= cheerio.load(await this.__crawlBrowser('.box.w1.info.fright')),
@@ -92,6 +111,11 @@ module.exports = {
 		console.log(results);
 	},
 
+	/**
+   	 * Get rally's itinerary pointed by URL path
+   	 * @param path wrc.com's url path to particular event's itinerary
+   	 * @param UTC time offset to normalize time stamps used throughout
+     */
 	__crawlItinerary: async function(path, offset) {
 		await this.__navigateBrowser(path, true);
 		var $ 		= cheerio.load(await this.__crawlBrowser('#datasite .data')),
@@ -121,6 +145,10 @@ module.exports = {
 		console.log(stages);
 	},
 
+	/**
+   	 * Get rally's start list
+   	 * @param path wrc.com's url path to particular event's start list
+     */
 	__crawlStartList: async function(path) {
 		// get to correct destination
 	    await this.__navigateClickBrowser(path, this.selectors.startList.page, true);
@@ -195,9 +223,17 @@ module.exports = {
 		console.log(startList);
 	},
 
+
+	__crawlStageDetail: async function() {
+
+	}
+
+	/**
+   	 * Get live text (comments from drivers at the end of the stages)
+     */
 	__crawlLiveText: async function() {
 		// TODO:
 		await this.__navigateBrowser(this.urls.liveText, false);
 		console.log(await this.__crawlBrowser('.popuptext.scrollcontent'))
 	}
-};
+}; 
