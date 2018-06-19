@@ -6,6 +6,8 @@ const EntitiesModule = require('html-entities').XmlEntities;
 const entities = new EntitiesModule();
 // puppetter instance wrapped in our wrapper
 const BrowserModule = require('./modules/crawlerBrowser.js');
+const CrawlerUtil = require('./modules/crawlerUtil.js');
+const CrawlerFn = require('./modules/crawlerFn.js');
 
 
 class Crawler {
@@ -55,161 +57,18 @@ class Crawler {
 		}
 	}
 
+	async exec() {
+		// initialize browser
+		await this.__openBrowser();
+		//await this.__crawlAllRallies();
+		await this.__crawlRallyInfo('calendar/finland-2018/page/699--699-682-.html');
+		//await this.__crawlLiveText();
+		//await this.__crawlItinerary('results/mexico/stage-times/page/334-228---.html', -5);
+		
+		//console.log(await this.__createDate([ '26', '07', '2018', 24, 59], 0));
 
-
-
-	// // PUBLIC methods
-	// async exec() {
-	// 	// initialize browser
-	// 	await this.__openBrowser();
-	// 	//await this.__crawlAllRallies();
-	// 	//await this.__crawlRallyInfo('calendar/finland-2018/page/699--699-682-.html');
-	// 	//await this.__crawlLiveText();
-	// 	await this.__crawlItinerary('results/mexico/stage-times/page/334-228---.html', -5);
-	// 	// we're done with crawling, bye for now
-	// 	await this.__closeBrowser();
-	// }
-	// PRIVATE methods
-	async __crawlBrowser(selector) {
-		return await this.browser.crawl(selector);
-	}
-
-	async __openBrowser() {
-		this.browser = new BrowserModule(true);
-		await this.browser.start();
-	} 
-
-	async __closeBrowser() {
-		await this.browser.close();
-	}
-
-	async __navigateBrowser(path, prefix) {
-		let url = prefix ? `${this.urls.prefix}${path}` : path;
-		await this.browser.navigate(url);
-	}
-
-	async createDate(array, offset) {
-		let len = array.length;
-		if (len < 3 || len > 5) {
-			throw 'Date can be create either to day precision or to minute precision, nothing else';
-		}
-		// Date constructor is not content with strings
-		array.forEach(function(elem, index){
-			array[index] = parseInt(elem);
-		});
-		// normalization for full date range
-		if (len === 3)
-			array.push(0, 0);
-		return new Date(array[2], array[1] - 1, array[0], array[3] + 1 - offset, array[4]);
-	}
-
-
-
-
-
-	// Crawling methods
-	async __crawlAllRallies() {
-		await this.__navigateBrowser('calendar/calendar/page/671-206-16--.html', true);
-		// for cheerio operation
-		var $ = cheerio.load(await this.__crawlBrowser('.news .data tbody')),
-			rallyInfos = [],
-			rallyLinks = [],
-			resultLinks = [];
-		// find all links, divide them into two groups
-		$('a').each(function() {
-			let rallyInfo = {},
-				acronym = $(this).find('img').attr('src'),
-				link = $(this).attr('href').slice(8);
-			// rally acronym, extracted from IMG src
-			if (acronym) {
-				rallyInfo['acronym'] = acronym.slice(acronym.lastIndexOf('/') + 2, acronym.indexOf('_'));
-				// parse full rally name
-				let name = $(this).html()
-				rallyInfo['name'] = name.slice(name.indexOf('>') + 1).trim();
-				rallyInfos.push(rallyInfo);
-			}	
-			// sort links according to type
-			if (link.indexOf('results') > -1) {
-				resultLinks.push(link);
-			} else if (link.indexOf('calendar') > -1) {
-				if (rallyLinks.indexOf(link) === -1)
-					rallyLinks.push(link);
-			}
-		});
-
-		// save rallies to database
-		console.log(rallyInfos);
-		console.log(rallyLinks);
-		console.log(resultLinks);
-	}
-
-	async __crawlRallyInfo(path) {
-		await this.__navigateBrowser(path, true);
-		var $ 		= cheerio.load(await this.__crawlBrowser('.box.w1.info.fright')),
-			opts 	= {
-				from: 1,
-				to: 2,
-				timezone: 3,
-				classes: 4,
-				distance: 5,
-				liason: 6,
-				servicePark: 7
-			},
-			results = {
-				date: {
-					from: undefined,
-					to: undefined
-				},
-				classes: []
-			};
-
-		$('tr').each(function(index) {
-			let ctx = $(this).find('td:nth-of-type(2)').html();
-			if (index === opts.from) {
-				results['date']['from'] = parseDate(ctx);
-			} else if (index === opts.to) {
-				results['date']['to'] = parseDate(ctx);
-			} else if (index === opts.timezone) {
-				results['timezone'] = parseInt(ctx.split(' ')[1]);
-			} else if (index === opts.classes) {
-				ctx.split('<br>').forEach(function(e, i){
-					results['classes'][i] = e.trim();
-				});
-			} else if (index === opts.distance) {
-				results['distance'] = parseFloat(ctx.split(' ')[1].replace('(', '').replace(',', '.'));
-			} else if (index === opts.liason) {
-				results['liason'] = parseFloat(ctx.split(' ')[0].replace('.', '').replace(',', '.'));
-			} else if (index === opts.servicePark) {
-				results['servicePark'] = entities.decode(ctx);
-			}
-		});
-
-		console.log(results);
-	}
-
-	async __crawlItinerary(path, offset) {
-		await this.__navigateBrowser(path, true);
-		var $ 		= cheerio.load(await this.__crawlBrowser('#datasite .data')),
-			stages  = [],
-			sel = this.selectors.itinerary,
-			createDate = this.createDate; 
-
-		$('tbody').each(function() {
-			var day = $(this).find('tr:first-of-type td strong').html().split('-')[1].trim().split('.');
-
-			$(this).find('tr:nth-of-type(n+2)').each(function(){
-				let stage = {};
-				
-				stage['stageNo'] = $(this).find(sel.stageNo).html();
-				stage['stageName'] = entities.decode($(this).find(sel.stageName).html().trim());
-				stage['stageLen'] = parseFloat($(this).find(sel.stageLen).html());
-				stage['stageStart'] = createDate(day.concat($(this).find(sel.stageStart).html().trim().split(':')), offset);
-				stage['stageStatus'] = $(this).find(sel.stageStatus).html().trim();
-
-				stages.push(stage);
-			});
-		});
-		console.log(stages);
+		// we're done with crawling, bye for now
+		await this.__closeBrowser();
 	}
 
 	async __crawlLiveText() {
@@ -219,16 +78,17 @@ class Crawler {
 	}
 }
 
-Crawler.prototype.exec = async function() {
-	// initialize browser
-	await this.__openBrowser();
-	//await this.__crawlAllRallies();
-	//await this.__crawlRallyInfo('calendar/finland-2018/page/699--699-682-.html');
-	//await this.__crawlLiveText();
-	await this.__crawlItinerary('results/mexico/stage-times/page/334-228---.html', -5);
-	// we're done with crawling, bye for now
-	await this.__closeBrowser();
-};
+// UTIL methods
+Crawler.prototype.__crawlBrowser = CrawlerUtil.__crawlBrowser;
+Crawler.prototype.__openBrowser = CrawlerUtil.__openBrowser;
+Crawler.prototype.__closeBrowser = CrawlerUtil.__closeBrowser;
+Crawler.prototype.__navigateBrowser = CrawlerUtil.__navigateBrowser;
+Crawler.prototype.__createDate = CrawlerUtil.__createDate;
+// SCRAPE methods
+Crawler.prototype.__crawlItinerary = CrawlerFn.__crawlItinerary;
+Crawler.prototype.__crawlAllRallies = CrawlerFn.__crawlAllRallies;
+Crawler.prototype.__crawlRallyInfo = CrawlerFn.__crawlRallyInfo;
+
 
 var crawler = new Crawler({
     parseAll: true
