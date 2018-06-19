@@ -15,29 +15,42 @@ class Crawler {
 	constructor(opts) {
 		if (!opts.hasOwnProperty('parseAll')) 
 			throw 'Unknown options object passed while creating parser';
-		// select what we want to scrape
-
-		// initialize connection to the database
-
+		// TODO: select what we want to scrape
+		// TODO: initialize connection to the database
 		// add items
 		this.blueprint = CrawlerOpt.blueprint;
 		this.selectors = CrawlerOpt.selectors;
 		this.urls = CrawlerOpt.urls;
+		// temp obj for navigating around the site
+		this.rallies = {
+			info: undefined,
+			results: undefined
+		};
 	}
 
 	async exec() {
 		// initialize browser
 		await this.__openBrowser();
+		// read all rallies
 		await this.__crawlAllRallies();
-		//await this.__crawlRallyInfo('calendar/finland-2018/page/699--699-682-.html');
+
+		await this.__crawlRallyInfo('calendar/monte-carlo-2018/page/683--683-682-.html');
+
+		// read each rally's info
+		/*for (var i = 0, len = this.rallies.info.length; i < len; i++) {
+			await this.__crawlRallyInfo(this.rallies.info[i]);
+		}*/
 		//await this.__crawlLiveText();
 		//await this.__crawlItinerary('results/mexico/stage-times/page/334-228---.html', -5);
 		//await this.__crawlStartList('livetiming/page/4175----.html');
-
 		//await this.__crawlStageTime();
 
 		// we're done with crawling, bye for now
 		await this.__closeBrowser();
+	}
+
+	async crawlFull() {
+
 	}
 }
 

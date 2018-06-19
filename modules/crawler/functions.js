@@ -46,10 +46,11 @@ module.exports = {
 					rallyLinks.push(link);
 			}
 		});
-		// save rallies to database
-		console.log(rallyInfos);
-		console.log(rallyLinks);
-		console.log(resultLinks);
+		// save links for further use
+		this.rallies['info'] = rallyLinks;
+		this.rallies['results'] = resultLinks;
+		// TODO: save barebone info about rally to DB
+		//console.log(rallyInfos);
 	},
 
 	/**

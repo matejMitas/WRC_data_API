@@ -1,3 +1,15 @@
+/**
+ * @fileoverview Config objects for various purposes
+ *
+ * Mostly enums revolving around certain elements on 
+ * page. Both numerical indexes in predefined elements
+ * or complete selectors 
+ * @author contact@matejmitas.com (Matěj Mitaš)
+ */
+
+/**
+ * Numerical indexes
+ */
 exports.blueprint = {
 	live: {
 		overall: 2,
@@ -18,7 +30,9 @@ exports.blueprint = {
 		servicePark: 7
 	}
 }
-
+/**
+ * Cheerio selectors
+ */
 exports.selectors = {
 	itinerary: {
 		stageNo: `td:nth-of-type(1)`,
@@ -37,7 +51,9 @@ exports.selectors = {
 		crewPrior: `td:nth-of-type(6)` 
 	}
 }
-
+/**
+ * Testing URLs
+ */
 exports.urls = {
 	prefix: 'http://www.wrc.com/en/wrc/',
 	rallyList: 'calendar/calendar/page/671-206-16--.html',
