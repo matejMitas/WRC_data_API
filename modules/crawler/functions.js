@@ -35,7 +35,7 @@ module.exports = {
 				rallyInfo['acronym'] = acronym.slice(acronym.lastIndexOf('/') + 2, acronym.indexOf('_'));
 				// parse full rally name
 				let name = $(this).html()
-				rallyInfo['name'] = name.slice(name.indexOf('>') + 1).trim();
+				rallyInfo['name'] = entities.decode(name.slice(name.indexOf('>') + 1).trim());
 				rallyInfos.push(rallyInfo);
 			}	
 			// sort links according to type
@@ -225,7 +225,7 @@ module.exports = {
 
 	__crawlStageDetail: async function() {
 
-	}
+	},
 
 	/**
    	 * Get live text (comments from drivers at the end of the stages)

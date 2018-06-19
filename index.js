@@ -5,10 +5,10 @@ const cheerio = require('cheerio');
 const EntitiesModule = require('html-entities').XmlEntities;
 const entities = new EntitiesModule();
 // puppetter instance wrapped in our wrapper
-const BrowserModule = require('./modules/crawlerBrowser.js');
-const CrawlerUtil = require('./modules/crawlerUtil.js');
-const CrawlerFn = require('./modules/crawlerFn.js');
-const CrawlerOpt = require('./modules/crawlerOpt.js');
+const BrowserModule = require('./modules/crawler/browser.js');
+const CrawlerUtil = require('./modules/crawler/utils.js');
+const CrawlerFn = require('./modules/crawler/functions.js');
+const CrawlerOpt = require('./modules/crawler/options.js');
 
 
 class Crawler {
@@ -28,13 +28,13 @@ class Crawler {
 	async exec() {
 		// initialize browser
 		await this.__openBrowser();
-		//await this.__crawlAllRallies();
+		await this.__crawlAllRallies();
 		//await this.__crawlRallyInfo('calendar/finland-2018/page/699--699-682-.html');
 		//await this.__crawlLiveText();
 		//await this.__crawlItinerary('results/mexico/stage-times/page/334-228---.html', -5);
 		//await this.__crawlStartList('livetiming/page/4175----.html');
 
-		await this.__crawlStageTime();
+		//await this.__crawlStageTime();
 
 		// we're done with crawling, bye for now
 		await this.__closeBrowser();
@@ -74,14 +74,9 @@ crawler.exec();
 (async function scrape() {
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
-    
-    //await readStartList(page);
-    //await readAllRallies(page);
-   	//await readRallyDetail(page, 'calendar/finland-2018/page/699--699-682-.html');
-   	//await readRallyIntinerary(page);
 
     // reading all stage times
-    /*
+    
   	// Wait for the results page to load and display the results.
   	const resultsSelector = '#datasite > form > select';
   	await page.waitForSelector(resultsSelector);
@@ -106,8 +101,8 @@ crawler.exec();
     	pages.push(await page.evaluate(sel => {return document.querySelector(sel).innerHTML}, sel));
     }
 
-    fs.writeFile('./out', pages, _ => console.log('done'));*/
+    fs.writeFile('./out', pages, _ => console.log('done'));
 
     // close the browser window
     browser.close();
-})();
+});

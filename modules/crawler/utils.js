@@ -1,4 +1,6 @@
-const BrowserModule = require('./crawlerBrowser.js');
+
+
+const BrowserModule = require('./browser.js');
 
 module.exports = {
 
