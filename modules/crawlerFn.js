@@ -38,7 +38,7 @@ module.exports = {
 		console.log(resultLinks);
 	},
 
-	// Crawling methods
+
 	__crawlRallyInfo: async function(path) {
 		await this.__navigateBrowser(path, true);
 		var $ 			= cheerio.load(await this.__crawlBrowser('.box.w1.info.fright')),
@@ -119,6 +119,85 @@ module.exports = {
 			});
 		});
 		console.log(stages);
-	}
+	},
 
+	__crawlStartList: async function(path) {
+		// get to correct destination
+	    await this.__navigateClickBrowser(path, this.selectors.startList.page, true);
+	    // main object for data, gets transfered to JSON later on after filled
+		var startList 	= {},
+			$ 			= cheerio.load(await this.__crawlBrowser('.scrolltable')),
+			sel 		= this.selectors.startList,
+			extractText = this.__extractText;
+		// scraping	
+		$('tbody tr').each(function() {
+			// object, that holds temp info
+			let crewObj = {
+				crewNo: undefined,
+				crewMembers: {
+					crewDriver: {},
+					crewCodriver: {}
+				},
+				crewEquip: {
+					team: undefined,
+					make: undefined,
+					car: undefined,
+				},
+				crewInfo: {
+					eligibilty: undefined,
+					class: undefined,
+					priority: undefined
+				}
+			}, crewPtr;
+			
+			// set crew number
+			crewObj['crewNo'] = $(this).find(sel.crewNo).html();
+			// set driver/codriver info
+			crewPtr = crewObj['crewMembers'];
+			$(this).find(`${sel.crewMembers} img`).each(function(index){
+				var nat = $(this).attr('title');
+				if (index === 0) {
+					crewPtr['crewDriver']['nat'] = nat;
+				} else if (index === 1) {
+					crewPtr['crewCodriver']['nat'] = nat;
+				} else {
+					throw 'Crew has only two members';
+				}
+			});
+			// remove all useless info
+			$(this).find(`${sel.crewMembers} img`).remove();
+			// set driver/codriver names
+			let ctx = $(this).find(sel.crewMembers).html(),
+				crewMembersData = extractText(ctx);
+			crewPtr['crewDriver']['name'] = crewMembersData[0];
+			crewPtr['crewCodriver']['name'] = crewMembersData[1];
+			// set equipment info
+			let make = $(this).find(`${sel.crewEquip} img`).attr('src');
+			make = make.slice(make.lastIndexOf('/') + 1, make.lastIndexOf('.'));
+			crewPtr = crewObj['crewEquip'];
+			crewPtr['make'] = `${make.slice(0,1).toUpperCase()}${make.slice(1)}`;
+			// remove manufacturer image
+			$(this).find(`${sel.crewEquip} img`).remove();
+			let equipInfo = extractText($(this).find(sel.crewEquip).html());
+			crewPtr['team']= equipInfo[0];
+			crewPtr['car'] = equipInfo[1];
+			// set info
+			crewPtr = crewObj['crewInfo'];
+			let crewEligInfo = $(this).find(sel.crewElig).html();
+			crewPtr['eligibilty'] = crewEligInfo !== 'None' ? crewEligInfo : undefined;
+			crewPtr['class'] = $(this).find(sel.crewClass).html().trim();
+			let crewPriorInfo = $(this).find(sel.crewPrior).html();
+			crewPtr['priority'] = crewPriorInfo !== 'None' ? crewPriorInfo : undefined;
+			// assign to the main obj*/
+			startList[`crew_${crewObj.crewNo}`] = crewObj;
+		});
+
+		console.log(startList);
+	},
+
+	__crawlLiveText: async function() {
+		// TODO:
+		await this.__navigateBrowser(this.urls.liveText, false);
+		console.log(await this.__crawlBrowser('.popuptext.scrollcontent'))
+	}
 };
