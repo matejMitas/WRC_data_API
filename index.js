@@ -5,7 +5,7 @@ const cheerio = require('cheerio');
 const EntitiesModule = require('html-entities').XmlEntities;
 const entities = new EntitiesModule();
 // puppetter instance wrapped in our wrapper
-const BrowserModule = require('./browser.js');
+const BrowserModule = require('./modules/crawlerBrowser.js');
 
 
 class Crawler {
