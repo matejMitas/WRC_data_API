@@ -22,10 +22,7 @@ class Crawler {
 		this.selectors = CrawlerOpt.selectors;
 		this.urls = CrawlerOpt.urls;
 		// temp obj for navigating around the site
-		this.rallies = {
-			info: undefined,
-			results: undefined
-		};
+		this.rallies = undefined;
 	}
 
 	async exec() {
@@ -33,13 +30,11 @@ class Crawler {
 		await this.__openBrowser();
 		// read all rallies
 		await this.__crawlAllRallies();
-
-		await this.__crawlRallyInfo('calendar/monte-carlo-2018/page/683--683-682-.html');
-
 		// read each rally's info
-		/*for (var i = 0, len = this.rallies.info.length; i < len; i++) {
-			await this.__crawlRallyInfo(this.rallies.info[i]);
-		}*/
+		// for (var key in this.rallies.info) {
+		// 	await this.__crawlRallyInfo(key, this.rallies.info[key]);
+		// }
+		console.log(this.rallies);
 		//await this.__crawlLiveText();
 		//await this.__crawlItinerary('results/mexico/stage-times/page/334-228---.html', -5);
 		//await this.__crawlStartList('livetiming/page/4175----.html');
@@ -76,8 +71,6 @@ var crawler = new Crawler({
 });
 
 crawler.exec();
-
-
 
 
 

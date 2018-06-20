@@ -20,37 +20,30 @@ module.exports = {
      */
 	__crawlAllRallies: async function() {
 		await this.__navigateBrowser('calendar/calendar/page/671-206-16--.html', true);
-		// for cheerio operation
-		var $ = cheerio.load(await this.__crawlBrowser('.news .data tbody')),
-			rallyInfos = [],
-			rallyLinks = [],
-			resultLinks = [];
+		var $ 			= cheerio.load(await this.__crawlBrowser('.news .data tbody')),
+			rallies 	= [],
+			returnData 	= [],
+			tempIndex;
+
 		// find all links, divide them into two groups
 		$('a').each(function() {
-			let rallyInfo = {},
+			let rally = {},
 				acronym = $(this).find('img').attr('src'),
+				title = $(this).attr('data-lang-en');
 				link = $(this).attr('href').slice(8);
 			// rally acronym, extracted from IMG src
 			if (acronym) {
-				rallyInfo['acronym'] = acronym.slice(acronym.lastIndexOf('/') + 2, acronym.indexOf('_'));
+				tempIndex = acronym.slice(acronym.lastIndexOf('/') + 2, acronym.indexOf('_'));
 				// parse full rally name
 				let name = $(this).html()
-				rallyInfo['name'] = entities.decode(name.slice(name.indexOf('>') + 1).trim());
-				rallyInfos.push(rallyInfo);
-			}	
-			// sort links according to type
-			if (link.indexOf('results') > -1) {
-				resultLinks.push(link);
-			} else if (link.indexOf('calendar') > -1) {
-				if (rallyLinks.indexOf(link) === -1)
-					rallyLinks.push(link);
+				rally['name'] = entities.decode(name.slice(name.indexOf('>') + 1).trim());
+				rally['infoLink'] = link;
+				rallies[tempIndex] = rally;
+			} else if (title) {
+				rallies[tempIndex]['resultsInfo'] = link;
 			}
 		});
-		// save links for further use
-		this.rallies['info'] = rallyLinks;
-		this.rallies['results'] = resultLinks;
-		// TODO: save barebone info about rally to DB
-		//console.log(rallyInfos);
+		this.rallies = rallies;
 	},
 
 	/**
@@ -58,53 +51,46 @@ module.exports = {
    	 * Executed from __crawlAllRallies
    	 * @param path wrc.com's url path to particular event
      */
-	__crawlRallyInfo: async function(path) {
+	__crawlRallyInfo: async function(acronym, path) {
 		await this.__navigateBrowser(path, true);
 		var $ 			= cheerio.load(await this.__crawlBrowser('.box.w1.info.fright')),
 			createDate 	= this.__createDate,
+			opts		= this.selectors.info,
 			datesTemp 	= {}, 
-			opts 		= {
-				from: 1,
-				to: 2,
-				timezone: 3,
-				classes: 4,
-				distance: 5,
-				liason: 6,
-				servicePark: 7
-			},
 			results 	= {
 				date: {
 					from: undefined,
 					to: undefined
 				},
-				classes: []
+				timezone	: undefined,
+				classes		: [],
+				distance	: undefined,
+				liason		: undefined,
+				servicePark	: undefined
 			};
 
-		$('tr').each(function(index) {
-			let ctx = $(this).find('td:nth-of-type(2)').html();
-
-			if (index === opts.timezone) {
-				// not necessarely a variable, but faster to access
-				let timezone = parseInt(ctx.split(' ')[1]);
-				results['timezone'] = timezone;
-				// we can assign date after timezone is resolved
-				results['date']['from'] = createDate(datesTemp['from'], timezone, false);
-				results['date']['to'] = createDate(datesTemp['to'], timezone, false);
-			} else if (index === opts.from) {
+		$('tr').each(function() {
+			let id 	= $(this).find('td:nth-of-type(1)').html().replace(':', '').toLowerCase().trim(),
+				ctx = $(this).find('td:nth-of-type(2)').html();
+			// read date, so we're able to tell, whenever it's past rally,
+			// current one or upcoming
+			if (id === opts.timezone) {
+				results['timezone'] = parseInt(ctx.split(' ')[1]);
+			} else if (id === opts.startDate) {
 				// just save it, we now nothing about timezone
-				datesTemp['from'] = ctx.split('.').concat([1, 0]);
-			} else if (index === opts.to) {
+				results['date']['from'] = createDate(ctx.split('.').concat([1, 0]), results['timezone'], false);
+			} else if (id === opts.endDate) {
 				// just save it, we now nothing about timezone
-				datesTemp['to'] = ctx.split('.').concat([24, 59]);
-			} else if (index === opts.classes) {
+				results['date']['to'] = createDate(ctx.split('.').concat([23, 59]), results['timezone'], false);
+			} else if (id === opts.category) {
 				ctx.split('<br>').forEach(function(e, i){
 					results['classes'][i] = e.trim();
 				});
-			} else if (index === opts.distance) {
+			} else if (id === opts.distance) {
 				results['distance'] = parseFloat(ctx.split(' ')[1].replace('(', '').replace(',', '.'));
-			} else if (index === opts.liason) {
+			} else if (id === opts.liason) {
 				results['liason'] = parseFloat(ctx.split(' ')[0].replace('.', '').replace(',', '.'));
-			} else if (index === opts.servicePark) {
+			} else if (id === opts.servicePark) {
 				results['servicePark'] = entities.decode(ctx);
 			}
 		});
