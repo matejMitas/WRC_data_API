@@ -8,6 +8,25 @@
  */
 const BrowserModule = require('./browser.js');
 
+/**
+ * Daylight offset computation extravaganza
+ * @souce https://stackoverflow.com/questions/11887934/how-to-check-if-the-dst-daylight-saving-time-is-in-effect-and-if-it-is-whats
+ * @author https://stackoverflow.com/users/1241365/sheldon-griffin
+ */
+Date.prototype.stdTimezoneOffset = function () {
+    var jan = new Date(this.getFullYear(), 0, 1);
+    var jul = new Date(this.getFullYear(), 6, 1);
+    return Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset());
+}
+/**
+ * Daylight offset computation extravaganza
+ * @souce https://stackoverflow.com/questions/11887934/how-to-check-if-the-dst-daylight-saving-time-is-in-effect-and-if-it-is-whats
+ * @author https://stackoverflow.com/users/1241365/sheldon-griffin
+ */
+Date.prototype.isDstObserved = function () {
+    return this.getTimezoneOffset() < this.stdTimezoneOffset();
+}
+
 module.exports = {
 	/**
    	 * Return crawled data pointed by selector
@@ -50,6 +69,10 @@ module.exports = {
 		let url = prefix ? `${this.urls.prefix}${path}` : path;
 		await this.browser.navigateClick(url, selector);
 	},
+
+
+
+
 	/**
    	 * Navigate to particular page and click on element
    	 * @param path URL to visit
@@ -67,10 +90,15 @@ module.exports = {
 			array[index] = parseInt(elem);
 		});
 		// normalization for full date range
-		if (normalize)
+		if (normalize) {
 			array[3] = array[3] - offset
+		}
 
-		return new Date(array[2], array[1] - 1, array[0], array[3] + 1, array[4]);
+		let date = new Date(array[2], array[1] - 1, array[0], array[3] + 1, array[4]);
+		if (date.isDstObserved()) { 
+		     date.setHours(2);
+		}
+		return date;
 	},
 	/**
    	 * Helper function for extracting lists from
@@ -84,5 +112,18 @@ module.exports = {
 			data[index] = item.trim();
 		});
 		return data;
+	},
+	/**
+   	 * Converts string to sentece case
+   	 * @param string To be treated
+     */
+	__toCapitalCase: function(string) {
+		let returnString = "";
+		string.split(' ').forEach((elem, index) => {
+			if (index)
+				returnString += ' ';
+			returnString += elem.slice(0,1).toUpperCase() + elem.slice(1).toLowerCase();
+		});
+		return returnString;
 	}
-};
+}; 
