@@ -19,9 +19,9 @@ module.exports = {
    	 * First function to execute
      */
 	__crawlAllRallies: async function() {
-		await this.__navigateBrowser('calendar/calendar/page/671-206-16--.html', true);
+		await this.__navigateBrowser(this.urls.rallyList, true);
 		var $ 			= cheerio.load(await this.__crawlBrowser('.news .data tbody')),
-			rallies 	= [],
+			rallies 	= {},
 			returnData 	= [],
 			tempIndex;
 
@@ -53,11 +53,12 @@ module.exports = {
      */
 	__crawlRallyInfo: async function(acronym, path) {
 		await this.__navigateBrowser(path, true);
-		var $ 			= cheerio.load(await this.__crawlBrowser('.box.w1.info.fright')),
-			createDate 	= this.__createDate,
-			opts		= this.selectors.info,
-			datesTemp 	= {}, 
-			results 	= {
+		var $ 				= cheerio.load(await this.__crawlBrowser('.box.w1.info.fright')),
+			createDate 		= this.__createDate,
+			toCapitalCase 	= this.__toCapitalCase,
+			opts			= this.selectors.info,
+			datesTemp 		= {}, 
+			results 		= {
 				date: {
 					from: undefined,
 					to: undefined
@@ -75,26 +76,29 @@ module.exports = {
 			// read date, so we're able to tell, whenever it's past rally,
 			// current one or upcoming
 			if (id === opts.timezone) {
-				results['timezone'] = parseInt(ctx.split(' ')[1]);
+				let timezone = parseInt(ctx.split(' ')[1]);
+				results['timezone'] = timezone ? timezone : 1;
 			} else if (id === opts.startDate) {
 				// just save it, we now nothing about timezone
-				results['date']['from'] = createDate(ctx.split('.').concat([1, 0]), results['timezone'], false);
+				results['date']['from'] = createDate(ctx.split('.').concat([0, 0]), 0, false);
 			} else if (id === opts.endDate) {
 				// just save it, we now nothing about timezone
-				results['date']['to'] = createDate(ctx.split('.').concat([23, 59]), results['timezone'], false);
+				results['date']['to'] = createDate(ctx.split('.').concat([0, 0]), 0, false);
 			} else if (id === opts.category) {
 				ctx.split('<br>').forEach(function(e, i){
 					results['classes'][i] = e.trim();
 				});
 			} else if (id === opts.distance) {
-				results['distance'] = parseFloat(ctx.split(' ')[1].replace('(', '').replace(',', '.'));
+				let distance = parseFloat(ctx.split(' ')[1].replace('(', '').replace(',', '.'));
+				results['distance'] = isNaN(distance) ? undefined : distance;
 			} else if (id === opts.liason) {
 				results['liason'] = parseFloat(ctx.split(' ')[0].replace('.', '').replace(',', '.'));
 			} else if (id === opts.servicePark) {
-				results['servicePark'] = entities.decode(ctx);
+				results['servicePark'] = toCapitalCase(entities.decode(ctx));
 			}
 		});
 		console.log(results);
+		return results['timezone'];
 	},
 
 	/**

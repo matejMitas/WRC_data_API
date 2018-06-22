@@ -6,6 +6,7 @@ const EntitiesModule = require('html-entities').XmlEntities;
 const entities = new EntitiesModule();
 // puppetter instance wrapped in our wrapper
 const BrowserModule = require('./modules/crawler/browser.js');
+const AdapterModule = require('./modules/crawler/adapter.js');
 const CrawlerUtil = require('./modules/crawler/utils.js');
 const CrawlerFn = require('./modules/crawler/functions.js');
 const CrawlerOpt = require('./modules/crawler/options.js');
@@ -17,30 +18,46 @@ class Crawler {
 			throw 'Unknown options object passed while creating parser';
 		// TODO: select what we want to scrape
 		// TODO: initialize connection to the database
+		this.adp = new AdapterModule('mongodb://localhost:27017', 'api');
 		// add items
 		this.blueprint = CrawlerOpt.blueprint;
 		this.selectors = CrawlerOpt.selectors;
 		this.urls = CrawlerOpt.urls;
 		// temp obj for navigating around the site
-		this.rallies = undefined;
+		this.rallies = CrawlerOpt.rallies;
 	}
 
 	async exec() {
 		// initialize browser
 		await this.__openBrowser();
+		// connect to database, clear before use
+		await this.adp.connect();
+		await this.adp.dropCollection('Rallies');
+		
 		// read all rallies
-		await this.__crawlAllRallies();
+		//await this.__crawlAllRallies();
 		// read each rally's info
-		// for (var key in this.rallies.info) {
-		// 	await this.__crawlRallyInfo(key, this.rallies.info[key]);
-		// }
-		console.log(this.rallies);
+		for (var key in this.rallies) {
+			// get rally info
+		 	//let timezone = await this.__crawlRallyInfo(key, this.rallies[key].infoLink);
+			// enter results section, first is itinerary, timezone is resolved
+			// for each rally in previous step
+			//await this.__crawlItinerary('results/mexico/stage-times/page/334-228---.html', timezone);
+			await this.adp.insertIntoCollection('Rallies', {acronym: key});
+		}
+
+		await this.adp.updateInCollection('Rallies', {}, {info: 'test'}, true);
+
+		//await this.__crawlItinerary('results/mexico/stage-times/page/334-228---.html', -6);
+
+		//console.log(this.rallies);
 		//await this.__crawlLiveText();
 		//await this.__crawlItinerary('results/mexico/stage-times/page/334-228---.html', -5);
 		//await this.__crawlStartList('livetiming/page/4175----.html');
 		//await this.__crawlStageTime();
 
 		// we're done with crawling, bye for now
+		await this.adp.disconnect();
 		await this.__closeBrowser();
 	}
 
@@ -57,6 +74,7 @@ Crawler.prototype.__navigateBrowser = CrawlerUtil.__navigateBrowser;
 Crawler.prototype.__navigateClickBrowser = CrawlerUtil.__navigateClickBrowser;
 Crawler.prototype.__createDate = CrawlerUtil.__createDate;
 Crawler.prototype.__extractText = CrawlerUtil.__extractText;
+Crawler.prototype.__toCapitalCase = CrawlerUtil.__toCapitalCase;
 // SCRAPE methods
 Crawler.prototype.__crawlItinerary = CrawlerFn.__crawlItinerary;
 Crawler.prototype.__crawlAllRallies = CrawlerFn.__crawlAllRallies;
