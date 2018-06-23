@@ -23,7 +23,7 @@ module.exports = class Adapter {
 		await this.client.close();
 	}
 
-	async insertIntoCollection(collection, data) {
+	async insertIntoCollection(collection, data, many) {
 		let err;
 		await this.db.collection(collection).insertOne(data).catch(e => {
 			console.log('Couldn\'t insert')
@@ -43,6 +43,24 @@ module.exports = class Adapter {
 
 	async deleteFromCollection(collection, key, data, many) {
 
+	}
+
+	async findInCollection(collection, key) {
+		const cursor = this.db.collection(collection).find(key);
+		var ret = [];
+		for (let item = await cursor.next(); item != null; item = await cursor.next()) {
+			ret.push(item);
+		}
+		return ret;	
+	}
+
+	async findProjectInCollection(collection, key, projection) {
+		const cursor = this.db.collection(collection).find(key).project(projection);
+		var ret = [];
+		for (let item = await cursor.next(); item != null; item = await cursor.next()) {
+			ret.push(item);
+		}
+		return ret;	
 	}
 
 	async dropCollection(collection) {

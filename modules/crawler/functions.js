@@ -23,7 +23,8 @@ module.exports = {
 		var $ 			= cheerio.load(await this.__crawlBrowser('.news .data tbody')),
 			rallies 	= {},
 			returnData 	= [],
-			tempIndex;
+			tempIndex,
+			orderCounter = 0;
 
 		// find all links, divide them into two groups
 		$('a').each(function() {
@@ -39,6 +40,8 @@ module.exports = {
 				rally['name'] = entities.decode(name.slice(name.indexOf('>') + 1).trim());
 				rally['infoLink'] = link;
 				rallies[tempIndex] = rally;
+				rally['order'] = orderCounter;
+				orderCounter += 1;
 			} else if (title) {
 				rallies[tempIndex]['resultsInfo'] = link;
 			}
@@ -97,8 +100,8 @@ module.exports = {
 				results['servicePark'] = toCapitalCase(entities.decode(ctx));
 			}
 		});
-		console.log(results);
-		return results['timezone'];
+		console.log(`Crawled: ${acronym}`);
+		return results;
 	},
 
 	/**
@@ -106,33 +109,42 @@ module.exports = {
    	 * @param path wrc.com's url path to particular event's itinerary
    	 * @param UTC time offset to normalize time stamps used throughout
      */
-	__crawlItinerary: async function(path, offset) {
+	__crawlItinerary: async function(acronym, path, offset) {
 		await this.__navigateBrowser(path, true);
-		var $ 		= cheerio.load(await this.__crawlBrowser('#datasite .data')),
-			stages  = [],
-			sel = this.selectors.itinerary,
-			createDate = this.__createDate; 
+		var $ = cheerio.load(await this.__crawlBrowser('#datasite .data')),
+			test = $('tbody tr:nth-of-type(2) td:nth-of-type(3)').html();
+		// if page has no content	
+		if (test === null || isNaN(parseInt(test))) {
+			await this.__navigateBrowser(path, true);
+			$ = cheerio.load(await this.__crawlBrowser('#datasite .data'));
+		}
+
+		var stages  	= [],
+			sel 		= this.selectors.itinerary,
+			createDate 	= this.__createDate; 
 
 		$('tbody').each(function() {
 			// if page decides to not return anything
 			var dateSource = $(this).find('tr:first-of-type td strong').html();
 			if (dateSource === null)
-				return;
+				return false;
 			var day = dateSource.split('-')[1].trim().split('.');
 
 			$(this).find('tr:nth-of-type(n+2)').each(function(){
 				let stage = {};
 				
-				stage['stageNo'] = $(this).find(sel.stageNo).html();
-				stage['stageName'] = entities.decode($(this).find(sel.stageName).html().trim());
-				stage['stageLen'] = parseFloat($(this).find(sel.stageLen).html());
-				stage['stageStart'] = createDate(day.concat($(this).find(sel.stageStart).html().trim().split(':')), offset, true);
-				stage['stageStatus'] = $(this).find(sel.stageStatus).html().trim();
+				stage['no'] = parseInt($(this).find(sel.stageNo).html().slice(2));
+				stage['name'] = entities.decode($(this).find(sel.stageName).html().trim());
+				stage['len'] = parseFloat($(this).find(sel.stageLen).html());
+				stage['start'] = createDate(day.concat($(this).find(sel.stageStart).html().trim().split(':')), offset, true);
+				stage['status'] = $(this).find(sel.stageStatus).html().trim();
 
 				stages.push(stage);
 			});
 		});
-		console.log(stages);
+	
+		console.log(`Crawled stages for: ${acronym}`)
+		return stages;
 	},
 
 	/**
