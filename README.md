@@ -12,15 +12,15 @@ More info comming soon.
 ```javascript
 [
 	{
-	  "acronym" : "MCO",
-	  "name" : "Rallye Monte-Carlo",
-	  "info" : {
-	      "order" : 0
-	  }
+		"acronym" : "mco",
+		"name" : "Rallye Monte-Carlo",
+		"info" : {
+			"order" : 0
+		}
 	},
 	...
 	{
-		"acronym" : "AUS",
+		"acronym" : "aus",
 		"name" : "Kennards Hire Rally Australia",
 		"info" : {
 			"order" : 12
