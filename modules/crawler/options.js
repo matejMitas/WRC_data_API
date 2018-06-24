@@ -42,13 +42,13 @@ exports.selectors = {
 		stageStatus	: `td:nth-of-type(5)`
 	},
 	startList: {
-		page		: `.liveCenterContent > ul > li:nth-of-type(${exports.blueprint.live.startlist}) > a`,
-		crewNo		: `td:nth-of-type(1)`,
-		crewMembers	: `td:nth-of-type(2)`,
-		crewEquip	: `td:nth-of-type(3)`,
-		crewElig	: `td:nth-of-type(4)`,
-		crewClass	: `td:nth-of-type(5)`,
-		crewPrior	: `td:nth-of-type(6)` 
+		page		: `.liveCenterContent > ul > li:nth-of-type(${exports.blueprint.live.startList}) > a`,
+		no			: `td:nth-of-type(1)`,
+		members		: `td:nth-of-type(2)`,
+		equip		: `td:nth-of-type(3)`,
+		elig		: `td:nth-of-type(4)`,
+		class		: `td:nth-of-type(5)`,
+		prior		: `td:nth-of-type(6)` 
 	},
 	info: {
 		startDate	: 'start date',
