@@ -118,11 +118,17 @@ module.exports = {
    	 * @param string To be treated
      */
 	__toCapitalCase: function(string) {
-		let returnString = "";
+		let returnString = '',
+			temp = '';
 		string.split(' ').forEach((elem, index) => {
 			if (index)
-				returnString += ' ';
-			returnString += elem.slice(0,1).toUpperCase() + elem.slice(1).toLowerCase();
+				temp += ' ';
+			temp += elem.toLowerCase();
+			if (!elem.toLowerCase().match(/^[dlv]\w{1,2}$/))
+				returnString += index ? temp.slice(0,2).toUpperCase()+ temp.slice(2) : temp.slice(0,1).toUpperCase() + temp.slice(1);
+			else
+				returnString += temp;
+			temp = '';
 		});
 		return returnString;
 	}
