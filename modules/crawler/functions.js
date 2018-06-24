@@ -155,25 +155,27 @@ module.exports = {
 		// get to correct destination
 	    await this.__navigateClickBrowser(path, this.selectors.startList.page, true);
 	    // main object for data, gets transfered to JSON later on after filled
-		var startList 	= {},
+		var startList 	= [],
 			$ 			= cheerio.load(await this.__crawlBrowser('.scrolltable')),
 			sel 		= this.selectors.startList,
-			extractText = this.__extractText;
+			extractText = this.__extractText,
+			toCapitalCase 	= this.__toCapitalCase;
 		// scraping	
 		$('tbody tr').each(function() {
 			// object, that holds temp info
 			let crewObj = {
-				crewNo: undefined,
-				crewMembers: {
-					crewDriver: {},
-					crewCodriver: {}
+				no: undefined,
+				crewId: undefined,
+				members: {
+					driver: {},
+					codriver: {}
 				},
-				crewEquip: {
+				equip: {
 					team: undefined,
 					make: undefined,
 					car: undefined,
 				},
-				crewInfo: {
+				info: {
 					eligibilty: undefined,
 					class: undefined,
 					priority: undefined
@@ -181,48 +183,57 @@ module.exports = {
 			}, crewPtr;
 			
 			// set crew number
-			crewObj['crewNo'] = $(this).find(sel.crewNo).html();
+			crewObj['no'] = parseInt($(this).find(sel.no).html());
 			// set driver/codriver info
-			crewPtr = crewObj['crewMembers'];
-			$(this).find(`${sel.crewMembers} img`).each(function(index){
+			crewPtr = crewObj['members'];
+			$(this).find(`${sel.members} img`).each(function(index){
 				var nat = $(this).attr('title');
 				if (index === 0) {
-					crewPtr['crewDriver']['nat'] = nat;
+					crewPtr['driver']['nat'] = nat.toLowerCase();
 				} else if (index === 1) {
-					crewPtr['crewCodriver']['nat'] = nat;
+					crewPtr['codriver']['nat'] = nat.toLowerCase();
 				} else {
 					throw 'Crew has only two members';
 				}
 			});
 			// remove all useless info
-			$(this).find(`${sel.crewMembers} img`).remove();
+			$(this).find(`${sel.members} img`).remove();
 			// set driver/codriver names
-			let ctx = $(this).find(sel.crewMembers).html(),
+			let ctx = $(this).find(sel.members).html(),
 				crewMembersData = extractText(ctx);
-			crewPtr['crewDriver']['name'] = crewMembersData[0];
-			crewPtr['crewCodriver']['name'] = crewMembersData[1];
+		    // set driver/codriver's name
+		    let driverName 	 = crewMembersData[0].split('. '),
+		    	codriverName = crewMembersData[1].split('. ');
+
+			crewPtr['driver']['name'] = driverName[0].indexOf('&') > -1 ? undefined : driverName[0];
+			crewPtr['driver']['surname'] = toCapitalCase(entities.decode(driverName[1]));
+
+			crewPtr['codriver']['name'] = codriverName[0];
+			crewPtr['codriver']['surname'] = toCapitalCase(entities.decode(codriverName[1]));
 			// set equipment info
-			let make = $(this).find(`${sel.crewEquip} img`).attr('src');
+			let make = $(this).find(`${sel.equip} img`).attr('src');
 			make = make.slice(make.lastIndexOf('/') + 1, make.lastIndexOf('.'));
-			crewPtr = crewObj['crewEquip'];
+			crewPtr = crewObj['equip'];
 			crewPtr['make'] = `${make.slice(0,1).toUpperCase()}${make.slice(1)}`;
 			// remove manufacturer image
-			$(this).find(`${sel.crewEquip} img`).remove();
-			let equipInfo = extractText($(this).find(sel.crewEquip).html());
-			crewPtr['team']= equipInfo[0];
+			$(this).find(`${sel.equip} img`).remove();
+			let equipInfo = extractText($(this).find(sel.equip).html());
+			crewPtr['team']= toCapitalCase(entities.decode(equipInfo[0]));
 			crewPtr['car'] = equipInfo[1];
 			// set info
-			crewPtr = crewObj['crewInfo'];
-			let crewEligInfo = $(this).find(sel.crewElig).html();
+			crewPtr = crewObj['info'];
+			let crewEligInfo = $(this).find(sel.elig).html();
 			crewPtr['eligibilty'] = crewEligInfo !== 'None' ? crewEligInfo : undefined;
-			crewPtr['class'] = $(this).find(sel.crewClass).html().trim();
-			let crewPriorInfo = $(this).find(sel.crewPrior).html();
+			crewPtr['class'] = $(this).find(sel.class).html().trim();
+			let crewPriorInfo = $(this).find(sel.prior).html();
 			crewPtr['priority'] = crewPriorInfo !== 'None' ? crewPriorInfo : undefined;
-			// assign to the main obj*/
-			startList[`crew_${crewObj.crewNo}`] = crewObj;
-		});
 
-		console.log(startList);
+			crewObj['crewId'] = `${entities.decode(driverName[1]).toLowerCase().split(' ').slice(-1)[0]}-${entities.decode(codriverName[1]).toLowerCase().split(' ').slice(-1)[0]}`;
+
+			// assign to the main obj*/
+			startList.push(crewObj);
+		});
+		return startList;
 	},
 
 
