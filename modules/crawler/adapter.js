@@ -32,12 +32,20 @@ module.exports = class Adapter {
 		return err ? err : true;
 	}
 
-	async updateInCollection(collection, key, data, many) {
+	async updateInCollection(collection, key, data, many = false) {
 		let err;
 		if (many) 
 			await this.db.collection(collection).updateMany(key, {$set: data});
 		else
 			await this.db.collection(collection).updateOne(key, {$set: data});
+		return err ? err : true;
+	}
+
+	async updatePushToCollection(collection, key, arrayName, data) {
+		let err,
+			array = {};
+		array[arrayName] = data;
+		await this.db.collection(collection).updateMany(key, {$push: array});
 		return err ? err : true;
 	}
 
