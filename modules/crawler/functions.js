@@ -100,7 +100,6 @@ module.exports = {
 				results['servicePark'] = toCapitalCase(entities.decode(ctx));
 			}
 		});
-		console.log(`Crawled: ${acronym}`);
 		return results;
 	},
 
@@ -236,6 +235,21 @@ module.exports = {
 		return startList;
 	},
 
+	/**
+   	 * Get rally's penalties
+   	 * @param path wrc.com's url path to particular event's penalties
+     */
+	__crawlPenalties: async function(path) {
+
+	},
+
+	/**
+   	 * Get rally's retirements
+   	 * @param path wrc.com's url path to particular event's retirements
+     */
+	__crawlRetirements: async function(path) {
+
+	},
 
 	__crawlStageDetail: async function() {
 
