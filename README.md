@@ -1,7 +1,7 @@
 # WRC data API
 An attempt to turn publicly available data into REST &amp; GraphQL APIs
 \--
-Working in progress.
+Work in progress.
 
 ### REST API Routes
 
