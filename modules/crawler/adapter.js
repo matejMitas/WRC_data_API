@@ -11,21 +11,26 @@ module.exports = class Adapter {
 	}
 
 	async connect() {
-		this.client = await MongoClient.connect(this.path).catch(e => {console.log('Couldn\'t connect')});
-		if (this.client)
+		try {
+			this.client = await MongoClient.connect(this.path, {});
 			this.db = this.client.db(this.dbName);
-		else
-			return false;
-		return true;
+		} catch (err) {
+			console.error(new Error(err));
+		}
 	}
 
 	async disconnect() {
-		await this.client.close();
+		try {
+			await this.client.close();
+		} catch (err) {
+			console.error(new Error(err));
+		}
 	}
 
 	async insertIntoCollection(collection, data, many) {
 		let err;
 		await this.db.collection(collection).insertOne(data).catch(e => {
+			console.log(e);
 			console.log('Couldn\'t insert')
 			err = false;
 		});

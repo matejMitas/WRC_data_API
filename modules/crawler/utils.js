@@ -94,7 +94,7 @@ module.exports = {
 			array[3] = array[3] - offset
 		}
 
-		let date = new Date(array[2], array[1] - 1, array[0], array[3] + 1, array[4]);
+		let date = new Date(array[2], array[1] - 1, array[0], array[3], array[4]);
 		if (date.isDstObserved()) { 
 		     date.setHours(2);
 		}

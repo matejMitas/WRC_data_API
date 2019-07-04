@@ -18,7 +18,7 @@ exports.blueprint = {
 		itinerary	: 6,
 		startList 	: 7,
 		penalties	: 8,
-		retirement	: 9
+		retirements	: 9
 	},
 	detail: {
 		from		: 1,
@@ -49,6 +49,17 @@ exports.selectors = {
 		elig		: `td:nth-of-type(4)`,
 		class		: `td:nth-of-type(5)`,
 		prior		: `td:nth-of-type(6)` 
+	},
+	penalties: {
+		page		: `.liveCenterContent > ul > li:nth-of-type(${exports.blueprint.live.penalties}) > a`,
+		startOrder	: `td:nth-of-type(1)`,
+		no 			: `td:nth-of-type(2)`
+	},
+	retirements: {
+		page		: `.liveCenterContent > ul > li:nth-of-type(${exports.blueprint.live.retirements}) > a`,
+	},
+	splits: {
+		page		: `.liveCenterContent > ul > li:nth-of-type(${exports.blueprint.live.splits}) > a`,
 	},
 	info: {
 		startDate	: 'start date',

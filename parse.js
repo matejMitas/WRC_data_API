@@ -4,6 +4,10 @@ const JSONFormatter = require("simple-json-formatter");
 // library for conversion of HTML entities to Unicode strings
 const EntitiesModule = require('html-entities').XmlEntities;
 const entities = new EntitiesModule();
+const where = require('node-where');
+const countries = require("i18n-iso-countries");
+
+const AdapterModule = require('./modules/crawler/adapter.js');
 
 const startSelectors = {
 	crewNo: `td:nth-of-type(1)`,
@@ -32,120 +36,78 @@ function createDate(array, offset) {
 		array[index] = parseInt(elem);
 	});
 	// normalization for full date range
-	if (len === 3)
-		array.push(0, 0);
 	return new Date(array[2], array[1] - 1, array[0], array[3] + 1 - offset, array[4]);
 }
 
-function scrapeStartList(data) {
-	// main object for data, gets transfered to JSON later on after filled
-	var startList 	= {},
-		$ 			= cheerio.load(data);
-	// scraping	
-	$('tbody tr').each(function() {
-		// object, that holds temp info
-		let crewObj = {
-			crewNo: undefined,
-			crewMembers: {
-				crewDriver: {},
-				crewCodriver: {}
-			},
-			crewEquip: {
-				team: undefined,
-				make: undefined,
-				car: undefined,
-			},
-			crewInfo: {
-				eligibilty: undefined,
-				class: undefined,
-				priority: undefined
-			}
-		}, crewPtr;
-		// set crew number
-		crewObj['crewNo'] = $(this).find(startSelectors.crewNo).html()
-		// set driver/codriver info
-		crewPtr = crewObj['crewMembers'];
-		$(this).find(`${startSelectors.crewMembers} img`).each(function(index){
-			var nat = $(this).attr('title');
-			if (index === 0) {
-				crewPtr['crewDriver']['nat'] = nat;
-			} else if (index === 1) {
-				crewPtr['crewCodriver']['nat'] = nat;
-			} else {
-				throw 'Crew has only two members';
-			}
-		});
-		// remove all useless info
-		$(this).find(`${startSelectors.crewMembers} img`).remove();
-		// set driver/codriver names
-		let ctx = $(this).find(startSelectors.crewMembers).html(),
-			crewMembersData = extractText(ctx);
-		crewPtr['crewDriver']['name'] = crewMembersData[0];
-		crewPtr['crewCodriver']['name'] = crewMembersData[1];
-		// set equipment info
-		let make = $(this).find(`${startSelectors.crewEquip} img`).attr('src');
-		make = make.slice(make.lastIndexOf('/') + 1, make.lastIndexOf('.'));
-		crewPtr = crewObj['crewEquip'];
-		crewPtr['make'] = `${make.slice(0,1).toUpperCase()}${make.slice(1)}`;
-		// remove manufacturer image
-		$(this).find(`${startSelectors.crewEquip} img`).remove();
-		let equipInfo = extractText($(this).find(startSelectors.crewEquip).html());
-		crewPtr['team']= equipInfo[0];
-		crewPtr['car'] = equipInfo[1];
-		// set info
-		crewPtr = crewObj['crewInfo'];
-		let crewEligInfo = $(this).find(startSelectors.crewElig).html();
-		crewPtr['eligibilty'] = crewEligInfo !== 'None' ? crewEligInfo : undefined;
-		crewPtr['class'] = $(this).find(startSelectors.crewClass).html().trim();
-		let crewPriorInfo = $(this).find(startSelectors.crewPrior).html();
-		crewPtr['priority'] = crewPriorInfo !== 'None' ? crewPriorInfo : undefined;
-		// assign to the main obj
-		startList[`crew_${crewObj.crewNo}`] = crewObj;
-	});
-	return startList;
-}
-
-
-const stageSelectors = {
-	stageNo: `td:nth-of-type(1)`,
-	stageName: `td:nth-of-type(2) a`,
-	stageLen: `td:nth-of-type(3)`,
-	stageStart: `td:nth-of-type(4)`,
-	stageStatus: `td:nth-of-type(5)`
-};
-
-/*fs.readFile('source/itinerary.html', 'utf-8', (err, data) => {
+/*fs.readFile('source/index.html', 'utf-8', (err, data) => {
 	if (err) throw err;
-	var $ = cheerio.load(data),
-		stages = [];
+	// for cheerio operation
+	var $ 			= cheerio.load(data);
+	//console.log(data);
 
-	var offset = -5;
-
-	$('tbody').each(function() {
-		var day = $(this).find('tr:first-of-type td strong').html().split('-')[1].trim().split('.');
-
-		$(this).find('tr:nth-of-type(n+2)').each(function(){
-			let stage = {};
-			stage['stageNo'] = $(this).find(stageSelectors.stageNo).html();
-			stage['stageName'] = entities.decode($(this).find(stageSelectors.stageName).html().trim());
-			stage['stageLen'] = parseFloat($(this).find(stageSelectors.stageLen).html());
-			stage['stageStart'] = createDate(day.concat($(this).find(stageSelectors.stageStart).html().trim().split(':')), offset);
-			stage['stageStatus'] = $(this).find(stageSelectors.stageStatus).html().trim();
-
-			stages.push(stage);
-		});
-	});
-	console.log(stages);
+	$('.season-event-name a').attr('title', 'Show results').each(function(){
+		console.log('https://www.ewrc-results.com' + $(this).attr('href').replace('/final', '/entries'));
+	})
 });*/
 
-fs.readFile('out.html', 'utf-8', (err, data) => {
-	if (err) throw err;
-	// scraping itself
-	fs.writeFile('json/startList.json', JSONFormatter.format(JSON.stringify(scrapeStartList(data)), "\t"), function(err){
-		if (err) throw err;
-	    console.log('Start list sucessfully scraped and saved');
-	});
-});
+// fs.readFile('./michelin.html', 'utf-8', (err, data) => {
+// 	if (err) throw err;
+// 	// for cheerio operation
+// 	var $ 			= cheerio.load(data);
+// 	//console.log(data);
+
+
+
+
+// 	$('a').each(function(){
+// 		console.log('http://www.dtmu.ge' + $(this).attr('href').slice(1))
+// 	})
+// });
+
+// fs.readFile('./test.html', 'utf-8', (err, data) => {
+// 	if (err) throw err;
+// 	// for cheerio operation
+// 	var $ 			= cheerio.load(data);
+// 	//console.log(data);
+
+
+
+
+// 	$('a').each(function(){
+// 		console.log('http://dandelioncosmetics.by' + $(this).attr('href'))
+// 	})
+// });
+
+
+
+// where.is(`Alghero, ${countries.getName("ita", "en")}`, function(err, result) {
+//   if (result) {
+//     // Same result as address search
+//     // ...
+//     console.log(result);
+//   }
+// });
+
+
+// fs.readFile('source/splits.html', 'utf-8', (err, data) => {
+// 	if (err) throw err;
+// 	// for cheerio operation
+// 	var $ 			= cheerio.load(data),
+// 		rallies 	= [],
+// 		returnData 	= [],
+// 		tempIndex;
+
+// 	// find all links, divide them into two groups
+// 	$('tbody tr').each(function() {
+// 		//console.log($(this).html());
+
+// 		$(this).find('td').each(function(index) {
+// 			if (index === 1) {
+// 				console.log($(this).html());
+// 			}
+// 		});
+//  	});
+// });
 
 /*fs.readFile('source/text.html', 'utf-8', (err, data) => {
 	if (err) throw err;
@@ -173,5 +135,3 @@ fs.readFile('out.html', 'utf-8', (err, data) => {
 		//console.log($(this).find('strong').html());
 	});
 });*/
-
-

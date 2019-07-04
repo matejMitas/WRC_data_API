@@ -19,9 +19,9 @@ module.exports = class Browser {
    	 * Get Chrome up and running
      */
 	async start() {
-		// TODO: Error handling
-		this.browser = await puppeteer.launch({headless: this.headless});
+		this.browser = await puppeteer.launch();
 		this.page = await this.browser.newPage();
+		await this.page.setViewport({ width: 1920, height: 1050 })
 	}
 	/**
    	 * Close the browser
@@ -35,7 +35,7 @@ module.exports = class Browser {
      */
 	async navigate(path) {
 		// TODO: Better error handling
-		await this.page.goto(path, {timeout: 1500}).catch(e => {this.status = !this.status});
+		await this.page.goto(path, {timeout: 5000});
 	}
 	/**
    	 * Navigate the browser to particular location and click on selected element

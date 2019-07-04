@@ -240,7 +240,7 @@ module.exports = {
    	 * @param path wrc.com's url path to particular event's penalties
      */
 	__crawlPenalties: async function(path) {
-
+		
 	},
 
 	/**
