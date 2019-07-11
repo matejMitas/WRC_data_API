@@ -243,62 +243,62 @@ crawler.exec();
 
 
 
-(async function scrape() {
-    const browser = await puppeteer.launch({headless: false});
-    const page = await browser.newPage();
-    const adp = new AdapterModule('mongodb://localhost:27017', 'ewrc');
-    await adp.connect();
+// (async function scrape() {
+//     const browser = await puppeteer.launch({headless: false});
+//     const page = await browser.newPage();
+//     const adp = new AdapterModule('mongodb://localhost:27017', 'ewrc');
+//     await adp.connect();
 
 
-	await page.setViewport({ width: 1920, height: 1050 })
-    // reading all stage times    
-    await page.goto('https://www.wrc.com/en/wrc/livetiming/page/4175----.html');
+// 	await page.setViewport({ width: 1920, height: 1050 })
+//     // reading all stage times    
+//     await page.goto('https://www.wrc.com/en/wrc/livetiming/page/4175----.html');
 
-    // Wait for the results page to load and display the results.
-  	var resultsSelector = '.contentnav li:nth-of-type(3) a';
-  	await page.waitForSelector(resultsSelector);
+//     // Wait for the results page to load and display the results.
+//   	var resultsSelector = '.contentnav li:nth-of-type(3) a';
+//   	await page.waitForSelector(resultsSelector);
 
-  	await page.click(resultsSelector);
+//   	await page.click(resultsSelector);
 
-  	// Wait for the results page to load and display the results.
-  	resultsSelector = '#datasite > form > select';
-  	await page.waitForSelector(resultsSelector);
+//   	// Wait for the results page to load and display the results.
+//   	resultsSelector = '#datasite > form > select';
+//   	await page.waitForSelector(resultsSelector);
 
-  	// read values
-    var select = await page.evaluate(resultsSelector => {
-    	return document.querySelector(resultsSelector).innerHTML;
-    }, resultsSelector);
+//   	// read values
+//     var select = await page.evaluate(resultsSelector => {
+//     	return document.querySelector(resultsSelector).innerHTML;
+//     }, resultsSelector);
 
-    // get all values for options
-    var $ = cheerio.load(select),
-    	options = [];
-    $('option').each(function(index) {
-    	options.push($(this).val());
-    })
+//     // get all values for options
+//     var $ = cheerio.load(select),
+//     	options = [];
+//     $('option').each(function(index) {
+//     	options.push($(this).val());
+//     })
 
-    //await adp.dropCollection('Source');
+//     //await adp.dropCollection('Source');
 
-   	// order in individual stages, reminiscent of actual order
-    var pages = [];
-    for (var i = 4, len = options.length; i < 5; i++) {
-    	await page.select(resultsSelector, options[i]);
-    	const sel = '#datasite';
+//    	// order in individual stages, reminiscent of actual order
+//     var pages = [];
+//     for (var i = 4, len = options.length; i < 5; i++) {
+//     	await page.select(resultsSelector, options[i]);
+//     	const sel = '#datasite';
 
-    	console.log(i);
+//     	console.log(i);
 
-    	await page.waitForSelector(sel);
-    	await page.waitForSelector('#myTable');
-    	var data = {
-    		order: i,
-    		payload: await page.evaluate(sel => {return document.querySelector(sel).innerHTML}, sel) 
-		};
+//     	await page.waitForSelector(sel);
+//     	await page.waitForSelector('#myTable');
+//     	var data = {
+//     		order: i,
+//     		payload: await page.evaluate(sel => {return document.querySelector(sel).innerHTML}, sel) 
+// 		};
 
-		await adp.insertIntoCollection('Source', data);
-    }
+// 		await adp.insertIntoCollection('Source', data);
+//     }
 
-    //fs.writeFile('./out', pages, _ => console.log('done'));
+//     //fs.writeFile('./out', pages, _ => console.log('done'));
 
-	await adp.disconnect();
-    // close the browser window
-    browser.close();
-});
+// 	await adp.disconnect();
+//     // close the browser window
+//     browser.close();
+// });
