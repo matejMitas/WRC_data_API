@@ -1,32 +1,68 @@
 const fetchWrapper = require('node-fetch')
-const baseUrl = 'https://www.wrc.com/service/sasCacheApi.php?route=events'
+const AdapterModule = require('./modules/crawler/adapter.js');
 
-async function* getData(url) {
-	try {
-    	const response = await fetchWrapper(url);
-    	const data = await response.json();
+class ApiFetcher {
+	constructor(basePath, database) {
+		this.basePath = basePath;
+		this.database = database;
+		/*
+		Each event has two IDs (don't really know why), so 
+		it easier to store them at topmost level.
+		*/
+		this.current = {
+			eventId: 0,
+			rallyId: 0
+		};
+	}
 
-    	if (data instanceof Array) {
-    		for (let item of data) {
-    			yield item
-    		}
-    	} else {
-    		yield data
-    	}
-  	} catch (error) {
-    	console.log(error);
-  	}
+	async execute() {
+		var adp = new AdapterModule('mongodb://localhost:27017', this.database);
+		await adp.connect();
+
+		/*
+		First, get all rally IDs (here named eventId to introduce confussion)
+		*/
+		for await (let rallyData of this._getData()) {
+			console.log(rallyData);
+
+			/*
+			TODO: 
+				- entries
+				- stages
+				- penalties
+				- retirements
+			*/
+		}
+
+		await adp.disconnect();
+	}
+
+	async getRallyInfo(rallyId) {
+
+	}
+
+	async * _getData(urlModifier=null) {
+		try {
+	    	const response = await fetchWrapper(urlModifier ? `${this.basePath}/${urlModifier}` : this.basePath);
+	    	const data = await response.json();
+
+	    	if (data instanceof Array) {
+	    		for (let item of data) {
+	    			yield item;
+	    		}
+	    	} else {
+	    		yield data;
+	    	}
+	  	} catch (error) {
+	    	console.log(error);
+	  	}
+	}
 }
 
-(async function(){
-	for await (let data of getData(baseUrl)) {
-		for await (let rallyData of getData(`${baseUrl}/${data.eventId}`)) {
-			/*
-			Fetch all rally general info, nearly everything is already contained
-			in first 'route=events' fetch but 'rallyId' is weirdly missing and is
-			vital for next requests
-			*/
-			console.log(rallyData)
-		}
-	}
+(async function() {
+	const BASEURL = 'https://www.wrc.com/service/sasCacheApi.php?route=events';
+	const DATABASE = 'rallyStorage'
+
+	var af = new ApiFetcher(BASEURL, DATABASE);
+	af.execute();
 }())
