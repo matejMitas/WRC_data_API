@@ -1,4 +1,5 @@
 const fetchWrapper = require('node-fetch')
+const parseSchema = require('mongodb-schema');
 const AdapterModule = require('./modules/crawler/adapter.js');
 
 class ApiFetcher {
@@ -19,12 +20,16 @@ class ApiFetcher {
 		var adp = new AdapterModule('mongodb://localhost:27017', this.database);
 		await adp.connect();
 
+		this.current.eventId = 81
+		await this._getRallyInfo()
+
 		/*
 		First, get all rally IDs (here named eventId to introduce confussion)
 		*/
-		for await (let rallyData of this._getData()) {
-			console.log(rallyData);
-
+		for await (let ralliesData of this._getData()) {
+			//this.current.eventId = ralliesData.eventId
+			//await this._getRallyInfo()
+			
 			/*
 			TODO: 
 				- entries
@@ -37,8 +42,13 @@ class ApiFetcher {
 		await adp.disconnect();
 	}
 
-	async getRallyInfo(rallyId) {
+	async _getRallyInfo(eventId) {
+		// let year = parseInt(rallyData.slug.split('-').slice(-1)[0]);
+		// let country = rallyData.countryId;
 
+		let rallyData = (await this._getData(this.current.eventId).next()).value
+		this.current.rallyId = rallyData.rallies[0].rallyId
+		//this.current.rallyId = rallyData
 	}
 
 	async * _getData(urlModifier=null) {
