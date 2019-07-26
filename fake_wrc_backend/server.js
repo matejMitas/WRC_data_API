@@ -1,5 +1,6 @@
 const express = require('express');
 const app = express();
+const AdapterModule = require('../modules/crawler/adapter.js');
 
 /*
 Info route
@@ -15,7 +16,7 @@ app.get('/', (req, res) => {
 Events == Rallies, not sure why they selected such a confusing
 naming convension
 */
-app.get('/events', (req, res) => {
+app.get('/events', async (req, res) => {
 	res.send('List all available rallies');
 });
 
@@ -24,6 +25,22 @@ Info about event
 */
 app.get('/events/:eventId', (req, res) => {
 	res.send(`All info about rally: ${req.params.eventId}`);
+});
+
+/*
+Split times
+*/
+app.get('/events/:eventId/stages/:stageId/splittimes', (req, res) => {
+	res.send(`All info about rally: ${req.params.eventId}`);
+
+	const rally = parseInt(req.query.rallyId);
+	const event = parseInt(req.params.eventId);
+	const stage = parseInt(req.params.stageId);
+});
+
+
+app.get('*', (req, res) => {  
+	res.status(404).send([]);
 });
 
 app.listen(3000, () => {

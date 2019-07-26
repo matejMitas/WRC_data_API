@@ -1,12 +1,21 @@
+/*
+Library imports
+*/
 const fetchWrapper = require('node-fetch')
 const colors = require('colors');
 const parseSchema = require('mongodb-schema');
+
+process.env['NODE_CONFIG_DIR'] = `${__dirname.split('/').slice(0, -1).join('/')}/config`;
+const config = require('config');
+/*
+Own modules
+*/
 const AdapterModule = require('../modules/crawler/adapter.js');
 
 class ApiFetcher {
-	constructor(basePath, database) {
-		this.basePath = basePath;
-		this.database = database;
+	constructor() {
+		this.basePath = config.get('FakeDataApi.originalPath');
+		this.dbConfig = config.get('FakeDataApi.db');
 		/*
 		Each event has two IDs (don't really know why), so 
 		it easier to store them at topmost level.
@@ -19,7 +28,10 @@ class ApiFetcher {
 
 	async execute() {
 		try {
-			var adp = new AdapterModule('mongodb://localhost:27017', this.database);
+			var adp = new AdapterModule(
+				`${this.dbConfig.type}${this.dbConfig.host}:${this.dbConfig.port}`, 
+				this.dbConfig.dbName
+			);
 			await adp.connect();
 
 			this.current.eventId = 81
@@ -48,7 +60,10 @@ class ApiFetcher {
 
 	async test() {
 		try {
-			var adp = new AdapterModule('mongodb://localhost:27017', this.database);
+			var adp = new AdapterModule(
+				`${this.dbConfig.type}${this.dbConfig.host}:${this.dbConfig.port}`, 
+				this.dbConfig.dbName
+			);
 			await adp.connect();
 
 			var event = 81;
@@ -127,8 +142,7 @@ class ApiFetcher {
 
 (async function() {
 	const BASEURL = 'https://www.wrc.com/service/sasCacheApi.php?route=events';
-	const DATABASE = 'FakeDataApi'
 
-	var af = new ApiFetcher(BASEURL, DATABASE);
+	var af = new ApiFetcher('splitsConfig');
 	af.test();
-}())
+}());

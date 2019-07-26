@@ -1,0 +1,12 @@
+{
+    "FakeDataApi": {
+        "db": {
+            "type": "mongodb://",
+            "host": "localhost",
+            "port"  : 27017,
+            "dbName": "FakeDataApi"
+        },
+        "originalPath": "https://www.wrc.com/service/sasCacheApi.php?route=events"
+    }
+    
+}
