@@ -1,7 +1,7 @@
 const fetchWrapper = require('node-fetch')
 const colors = require('colors');
 const parseSchema = require('mongodb-schema');
-const AdapterModule = require('./modules/crawler/adapter.js');
+const AdapterModule = require('../modules/crawler/adapter.js');
 
 class ApiFetcher {
 	constructor(basePath, database) {
@@ -127,7 +127,7 @@ class ApiFetcher {
 
 (async function() {
 	const BASEURL = 'https://www.wrc.com/service/sasCacheApi.php?route=events';
-	const DATABASE = 'WrcData'
+	const DATABASE = 'FakeDataApi'
 
 	var af = new ApiFetcher(BASEURL, DATABASE);
 	af.test();

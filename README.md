@@ -4,3 +4,5 @@ As official timing service is somewhat lacking in most areas, I decided such a g
 Aim here is to create high availabilty client oriented service built on top of GraphQL protocol with Redis-based caching.
 
 
+## Disclaimer 
+Data used in project are not my own property and are not stored in this repository. 
