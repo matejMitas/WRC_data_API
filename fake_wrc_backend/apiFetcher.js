@@ -36,12 +36,7 @@ class ApiFetcher {
 				Check if rally is already store in database
 				TODO: move to separete method
 				*/
-				if (!(await this.adp.findInCollection(this.dbCols.rally, {'data.eventId': eventId})).length) {
-					this._logInfo(`Rally (eventId = '${eventId}') is about to fetched`, 'prog');
-					await this._getRallyInfo(eventId);
-				} else {
-					this._logInfo(`Rally (eventId = '${eventId}') already saved`, 'info');
-				}
+				await this._getRallyInfo(eventId);
 				this._logDivider();
 
 
@@ -68,33 +63,46 @@ class ApiFetcher {
 
 	async _getRallyInfo(eventId) {
 		/*
-		Even though 'event' and 'rally' overlaps without
-		any serious thought about consistency we still need
-		both to get all classes
+		Each _get method has responsibility
+		to determine wherever its core functionality
+		is fullfiled and can be passed down the 
+		data organisation tree
 		*/
-		let eventData = (await this._getData(eventId).next()).value
-		var rallyId = eventData.rallies[0].rallyId
-		let rallyData = (await this._getData(`${eventId}/rallies/${rallyId}`).next()).value
-		/*
-		Add 'eligibilities' and 'groups'
-		*/
-		eventData.eligibilities = rallyData.eligibilities;
-		eventData.groups = rallyData.groups;
-		
-		let payload = {}
-		/*
-		Create unique ID that is human-readable.
-		Extract year and ISO country code
-		*/
-		payload.humanId = {
-			year	: parseInt(eventData.startDate.split('-')[0]),
-			country	: eventData.country.iso3
-		}
-		payload.timestamp = new Date().getTime();
-		payload.data = eventData;
 
-		await this.adp.insertIntoCollection(this.dbCols.rally, payload);
-		this._logInfo(`Rally (eventId = '${eventId}') is fetched`, 'done');
+		let checkPresence = await this._checkPresence(this.dbCols.rally, {'data.eventId': eventId});
+		if (!checkPresence) {
+			this._logInfo(`Rally (eventId = '${eventId}') is about to fetched`, 'prog');
+			/*
+			Even though 'event' and 'rally' overlaps without
+			any serious thought about consistency we still need
+			both to get all classes
+			*/
+			let eventData = (await this._getData(eventId).next()).value
+			var rallyId = eventData.rallies[0].rallyId
+			let rallyData = (await this._getData(`${eventId}/rallies/${rallyId}`).next()).value
+			/*
+			Add 'eligibilities' and 'groups'
+			*/
+			eventData.eligibilities = rallyData.eligibilities;
+			eventData.groups = rallyData.groups;
+			
+			let payload = {}
+			/*
+			Create unique ID that is human-readable.
+			Extract year and ISO country code
+			*/
+			payload.humanId = {
+				year	: parseInt(eventData.startDate.split('-')[0]),
+				country	: eventData.country.iso3
+			}
+			payload.timestamp = new Date().getTime();
+			payload.data = eventData;
+
+			await this.adp.insertIntoCollection(this.dbCols.rally, payload);
+			this._logInfo(`Rally (eventId = '${eventId}') is fetched`, 'done');
+		} else {
+			this._logInfo(`Rally (eventId = '${eventId}') already saved`, 'info');
+		}
 	}
 
 	async _getStagesInfo() {
@@ -124,6 +132,11 @@ class ApiFetcher {
 	  	} catch (error) {
 	    	console.log(error);
 	  	}
+	}
+
+	async _checkPresence(col, query) {
+		let found = (await this.adp.findInCollection(col, query)).length
+		return (found) ? true : false; 
 	}
 
 	_logInfo(msg, severity) {
