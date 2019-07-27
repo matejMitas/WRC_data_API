@@ -6,7 +6,13 @@
             "port"  : 27017,
             "dbName": "FakeDataApi"
         },
-        "originalPath": "https://www.wrc.com/service/sasCacheApi.php?route=events"
+        "originalPath": "https://www.wrc.com/service/sasCacheApi.php?route=events",
+        "dbCols": {
+        	"log"	: "log",
+        	"rally"	: "rally",
+        	"split"	: "split",
+        	"stage"	: "stage"
+        }
     }
     
 }

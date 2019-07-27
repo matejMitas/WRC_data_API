@@ -14,8 +14,9 @@ const AdapterModule = require('../modules/crawler/adapter.js');
 
 class ApiFetcher {
 	constructor() {
-		this.basePath = config.get('FakeDataApi.originalPath');
-		this.dbConfig = config.get('FakeDataApi.db');
+		this.basePath 	= config.get('FakeDataApi.originalPath');
+		this.dbConfig 	= config.get('FakeDataApi.db');
+		this.dbCols 	= config.get('FakeDataApi.dbCols');
 	}
 
 	async execute() {
@@ -29,13 +30,23 @@ class ApiFetcher {
 			/*
 			First, get all rally IDs (here named eventId to introduce confussion)
 			*/
-			for await (let ralliesData of this._getData()) {
-
+			for await (var rallyData of this._getData()) {
+				var eventId = rallyData.eventId;
 				/*
 				Check if rally is already store in database
+				TODO: move to separete method
 				*/
+				if (!(await this.adp.findInCollection(this.dbCols.rally, {'data.eventId': eventId})).length) {
+					this._logInfo(`Rally (eventId = '${eventId}') is about to fetched`, 'prog');
+					await this._getRallyInfo(eventId);
+				} else {
+					this._logInfo(`Rally (eventId = '${eventId}') already saved`, 'info');
+				}
+				this._logDivider();
 
-				console.log(ralliesData.eventId)
+
+
+				//
 				//await this._getRallyInfo()
 
 				
@@ -69,22 +80,33 @@ class ApiFetcher {
 		*/
 		eventData.eligibilities = rallyData.eligibilities;
 		eventData.groups = rallyData.groups;
+		
+		let payload = {}
 		/*
 		Create unique ID that is human-readable.
 		Extract year and ISO country code
 		*/
-		let payload = {}
 		payload.humanId = {
 			year	: parseInt(eventData.startDate.split('-')[0]),
 			country	: eventData.country.iso3
 		}
-		payload.data = eventData
+		payload.timestamp = new Date().getTime();
+		payload.data = eventData;
 
-		console.log(payload);
+		await this.adp.insertIntoCollection(this.dbCols.rally, payload);
+		this._logInfo(`Rally (eventId = '${eventId}') is fetched`, 'done');
 	}
 
 	async _getStagesInfo() {
 		//
+	}
+
+	async _getEntries() {
+
+	}
+
+	async _getSplits() {
+
 	}
 
 	async * _getData(urlModifier=null) {
@@ -104,19 +126,19 @@ class ApiFetcher {
 	  	}
 	}
 
-	async _logToDb(payload) {
-		/*
-		Way to track fetching data from API and storing it
-		in our own database
-		*/
-		await this.adp.insertIntoCollection('log', {
-			timestamp: new Date().getTime(),
-			payload: payload
-		});
+	_logInfo(msg, severity) {
+		let coloredMsg;
+		let matchSeverity = {
+			'done'	: msg.green,
+			'info'	: msg.cyan,
+			'err'	: msg.red,
+			'prog'	: msg.yellow
+		}
+		console.log(matchSeverity[severity]);
 	}
 
-	async _deleteLogDb(query) {
-		await this.adp.deleteFromCollection('log', query);
+	_logDivider() {
+		console.log('------------------------------------------------------------');
 	}
 }
 
