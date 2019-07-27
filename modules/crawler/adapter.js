@@ -27,11 +27,11 @@ module.exports = class Adapter {
 		}
 	}
 
-	async insertIntoCollection(collection, data, many) {
+	async insertIntoCollection(collection, data) {
 		let err;
 		await this.db.collection(collection).insertOne(data).catch(e => {
 			console.log(e);
-			console.log('Couldn\'t insert')
+			console.log(`Couldn't insert`)
 			err = false;
 		});
 		return err ? err : true;
@@ -54,8 +54,15 @@ module.exports = class Adapter {
 		return err ? err : true;
 	}
 
-	async deleteFromCollection(collection, key, data, many) {
 
+	async deleteFromCollection(collection, query) {
+		let err;
+		await this.db.collection(collection).deleteMany(query).catch(e => {
+			console.log(e);
+			console.log(`Couldn't delete`)
+			err = false;
+		});
+		return err ? err : true;
 	}
 
 	async findInCollection(collection, key) {
