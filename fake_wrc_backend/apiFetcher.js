@@ -26,34 +26,14 @@ class ApiFetcher {
 				this.dbConfig.dbName
 			);
 			await this.adp.connect();
-			//await this._getRallyInfo(81);
+			await this._getRallyInfo(81);
 			/*
 			First, get all rally IDs (here named eventId to introduce confussion)
 			*/
-			for await (var rallyData of this._getData()) {
-				var eventId = rallyData.eventId;
-				/*
-				Check if rally is already store in database
-				TODO: move to separete method
-				*/
-				await this._getRallyInfo(eventId);
-				this._logDivider();
-
-
-
-				//
-				//await this._getRallyInfo()
-
-				
-
-				/*
-				TODO: 
-					- entries
-					- stages
-					- penalties
-					- retirements
-				*/
-			}
+			// for await (var rallyData of this._getData()) {
+			// 	var eventId = rallyData.eventId;
+			// 	await this._getRallyInfo(eventId);
+			// }
 
 			await this.adp.disconnect();
 		} catch (error) {
@@ -68,10 +48,13 @@ class ApiFetcher {
 		is fullfiled and can be passed down the 
 		data organisation tree
 		*/
+		let checkPresence = await this._checkPresence(
+			this.dbCols.rally, 
+			{'data.eventId': eventId}
+		);
 
-		let checkPresence = await this._checkPresence(this.dbCols.rally, {'data.eventId': eventId});
 		if (!checkPresence) {
-			this._logInfo(`Rally (eventId = '${eventId}') is about to fetched`, 'prog');
+			this._logInfo(`Rally (${eventId}) is about to fetched`, 'prog');
 			/*
 			Even though 'event' and 'rally' overlaps without
 			any serious thought about consistency we still need
@@ -99,14 +82,42 @@ class ApiFetcher {
 			payload.data = eventData;
 
 			await this.adp.insertIntoCollection(this.dbCols.rally, payload);
-			this._logInfo(`Rally (eventId = '${eventId}') is fetched`, 'done');
+			this._logInfo(`Rally (${eventId}) is fetched`, 'done');
 		} else {
-			this._logInfo(`Rally (eventId = '${eventId}') already saved`, 'info');
+			this._logInfo(`Rally (${eventId}) already saved`, 'info');
 		}
+
+		/*
+		After rally is fetched (or already in place), stages needs to taken care of
+		*/
+		await this._getStagesInfo(eventId);
+		await this._getEntries(eventId);
+		this._logDivider();
 	}
 
-	async _getStagesInfo() {
-		//
+	async _getStagesInfo(eventId) {
+		for await (var stageData of this._getData(`${eventId}/stages`)) {
+			var stageId = stageData.stageId;
+
+			let checkPresence = await this._checkPresence(
+				this.dbCols.stage, 
+				{'data.eventId': eventId, 'data.stageId': stageId}
+			);
+			if (!checkPresence) {
+				this._logInfo(`Stages (${stageId}) for rally (${eventId}) is about to fetched`, 'prog');
+
+				let preparedPayload = this._prepareRecord({
+					year: 0,
+					country: '',
+					code: stageData.code
+				}, stageData);
+
+				await this.adp.insertIntoCollection(this.dbCols.stage, preparedPayload);
+				this._logInfo(`Stages (${stageId}) for rally (${eventId}) is fetched`, 'done');
+			} else {
+				this._logInfo(`Stages (${stageId}) for rally (${eventId}) already saved`, 'info');
+			}
+		}
 	}
 
 	async _getEntries() {
@@ -134,9 +145,20 @@ class ApiFetcher {
 	  	}
 	}
 
-	async _checkPresence(col, query) {
+	_prepareRecord(humanId, data) {
+		let payload = {};
+		payload.humanId = humanId
+		payload.timestamp = new Date().getTime();
+		payload.data = data;
+		return payload;
+	}
+
+	async _checkPresence(col, query, key=null) {
+		/*
+		Sometimes is useful to return not only binary state but 
+		*/
 		let found = (await this.adp.findInCollection(col, query)).length
-		return (found) ? true : false; 
+		return (found) ? true : null; 
 	}
 
 	_logInfo(msg, severity) {
