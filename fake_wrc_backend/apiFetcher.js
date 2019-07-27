@@ -91,9 +91,52 @@ class ApiFetcher {
 		/*
 		After rally is fetched (or already in place), stages/entries needs to be taken care of
 		*/
-		await this._getStagesInfo(eventId, hasHumanId);
-		await this._getEntries(eventId);
+		//await this._getStagesInfo(eventId, hasHumanId);
+		await this._getEntries(eventId, hasHumanId);
 		this._logDivider();
+	}
+
+	async _getGeneral(type) {
+		/*
+		Decorator for all list type fetch items
+		WIP
+		*/
+		let config = {
+			stage: {
+				url: `${eventId}/stages`,
+				col: ``,
+				msg: ``
+			},
+			entry: {
+				url: `${eventId}/entries`,
+				col: ``,
+				msg: ``
+			}
+		}
+
+		// for await (var data of this._getData(path)) {
+		// 	var dataId = stageData.stageId;
+		// 	var hasHumanId = await this._checkPresence(
+		// 		this.dbCols.stage, 
+		// 		{'data.eventId': eventId, 'data.stageId': stageId}
+		// 	);
+
+		// 	if (!hasHumanId) {
+		// 		this._logInfo(`Stages (${stageId}) for rally (${eventId}) is about to fetched`, 'prog');
+		// 		let humanId = rallyHumanId;
+		// 		humanId.code = stageData.code
+
+		// 		await this._storeRecord(
+		// 			this.dbCols.stage, 
+		// 			humanId,
+		// 			stageData
+		// 		);
+
+		// 		this._logInfo(`Stages (${stageId}) for rally (${eventId}) is fetched`, 'done');
+		// 	} else {
+		// 		this._logInfo(`Stages (${stageId}) for rally (${eventId}) already saved`, 'info');
+		// 	}
+		// }
 	}
 
 	async _getStagesInfo(eventId, rallyHumanId) {
@@ -126,8 +169,35 @@ class ApiFetcher {
 		}
 	}
 
-	async _getEntries() {
+	async _getEntries(eventId, rallyHumanId) {
+		for await (var entryData of this._getData(`${eventId}/entries`)) {
+			var entryId = entryData.entryId;
+			var hasHumanId = await this._checkPresence(
+				this.dbCols.entry, 
+				{'data.eventId': eventId, 'data.entryId': entryId}
+			);
 
+			if (!hasHumanId) {
+				this._logInfo(`Entry (${entryId}) for rally (${eventId}) is about to fetched`, 'prog');
+				/*
+				Copy humanId for each step of the loop to ensure
+				possiblity of appending SS code
+				*/
+				let humanId = rallyHumanId;
+				humanId.driver = entryData.driver.code
+				humanId.codriver = entryData.codriver.code
+
+				await this._storeRecord(
+					this.dbCols.entry, 
+					humanId,
+					entryData
+				);
+
+				this._logInfo(`Entry (${entryId}) for rally (${eventId}) is fetched`, 'done');
+			} else {
+				this._logInfo(`Entry (${entryId}) for rally (${eventId}) already saved`, 'info');
+			}
+		}
 	}
 
 	async _getSplits() {
@@ -162,11 +232,11 @@ class ApiFetcher {
 
 	async _checkPresence(col, query) {
 		/*
-		Sometimes is useful to return not only binary state but 
+		If the record is already present return it's humanId for 
+		further propagation
 		*/
 		try {
 			let found = (await this.adp.findInCollection(col, query))[0].humanId
-			console.log(found);
 			return found;
 		} catch (err) {
 			return false;

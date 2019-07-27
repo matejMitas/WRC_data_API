@@ -11,7 +11,8 @@
         	"log"	: "log",
         	"rally"	: "rally",
         	"split"	: "split",
-        	"stage"	: "stage"
+        	"stage"	: "stage",
+        	"entry"	: "entry"
         }
     }
     
