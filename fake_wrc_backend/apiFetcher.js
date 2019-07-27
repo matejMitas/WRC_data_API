@@ -48,7 +48,7 @@ class ApiFetcher {
 		is fullfiled and can be passed down the 
 		data organisation tree
 		*/
-		let hasHumanId = await this._checkPresence(
+		var hasHumanId = await this._checkPresence(
 			this.dbCols.rally, 
 			{'data.eventId': eventId}
 		);
@@ -72,12 +72,14 @@ class ApiFetcher {
 			Create unique ID that is human-readable.
 			Extract year and ISO country code
 			*/
+			humanId = {
+				year: parseInt(eventData.startDate.split('-')[0]),
+				country: eventData.country.iso3,
+			};
+
 			await this._storeRecord(
 				this.dbCols.rally, 
-				{
-					year: parseInt(eventData.startDate.split('-')[0]),
-					country: eventData.country.iso3,
-				}, 
+				humanId,	 
 				eventData
 			);
 
@@ -87,31 +89,33 @@ class ApiFetcher {
 		}
 
 		/*
-		After rally is fetched (or already in place), stages needs to taken care of
+		After rally is fetched (or already in place), stages/entries needs to be taken care of
 		*/
-		await this._getStagesInfo(eventId);
+		await this._getStagesInfo(eventId, hasHumanId);
 		await this._getEntries(eventId);
 		this._logDivider();
 	}
 
-	async _getStagesInfo(eventId) {
+	async _getStagesInfo(eventId, rallyHumanId) {
 		for await (var stageData of this._getData(`${eventId}/stages`)) {
 			var stageId = stageData.stageId;
-
-			let hasHumanId = await this._checkPresence(
+			var hasHumanId = await this._checkPresence(
 				this.dbCols.stage, 
 				{'data.eventId': eventId, 'data.stageId': stageId}
 			);
+
 			if (!hasHumanId) {
 				this._logInfo(`Stages (${stageId}) for rally (${eventId}) is about to fetched`, 'prog');
+				/*
+				Copy humanId for each step of the loop to ensure
+				possiblity of appending SS code
+				*/
+				let humanId = rallyHumanId;
+				humanId.code = stageData.code
 
 				await this._storeRecord(
 					this.dbCols.stage, 
-					{
-						year: 0,
-						country: '',
-						code: stageData.code
-					}, 
+					humanId,
 					stageData
 				);
 
