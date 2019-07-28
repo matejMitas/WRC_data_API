@@ -26,14 +26,14 @@ class ApiFetcher {
 				this.dbConfig.dbName
 			);
 			await this.adp.connect();
-			await this._getRallyInfo(81);
+			//await this._getRallyInfo(81);
 			/*
 			First, get all rally IDs (here named eventId to introduce confussion)
 			*/
-			// for await (var rallyData of this._getData()) {
-			// 	var eventId = rallyData.eventId;
-			// 	await this._getRallyInfo(eventId);
-			// }
+			for await (var rallyData of this._getData()) {
+				var eventId = rallyData.eventId;
+				await this._getRallyInfo(eventId);
+			}
 
 			await this.adp.disconnect();
 		} catch (error) {
@@ -72,14 +72,14 @@ class ApiFetcher {
 			Create unique ID that is human-readable.
 			Extract year and ISO country code
 			*/
-			humanId = {
+			hasHumanId = {
 				year: parseInt(eventData.startDate.split('-')[0]),
 				country: eventData.country.iso3,
 			};
 
 			await this._storeRecord(
 				this.dbCols.rally, 
-				humanId,	 
+				hasHumanId,	 
 				eventData
 			);
 
@@ -91,7 +91,7 @@ class ApiFetcher {
 		/*
 		After rally is fetched (or already in place), stages/entries needs to be taken care of
 		*/
-		//await this._getStagesInfo(eventId, hasHumanId);
+		await this._getStagesInfo(eventId, hasHumanId);
 		await this._getEntries(eventId, hasHumanId);
 		this._logDivider();
 	}
@@ -142,6 +142,7 @@ class ApiFetcher {
 	async _getStagesInfo(eventId, rallyHumanId) {
 		for await (var stageData of this._getData(`${eventId}/stages`)) {
 			var stageId = stageData.stageId;
+
 			var hasHumanId = await this._checkPresence(
 				this.dbCols.stage, 
 				{'data.eventId': eventId, 'data.stageId': stageId}
@@ -153,12 +154,12 @@ class ApiFetcher {
 				Copy humanId for each step of the loop to ensure
 				possiblity of appending SS code
 				*/
-				let humanId = rallyHumanId;
-				humanId.code = stageData.code
+				hasHumanId = rallyHumanId;
+				hasHumanId.code = stageData.code
 
 				await this._storeRecord(
 					this.dbCols.stage, 
-					humanId,
+					hasHumanId,
 					stageData
 				);
 
@@ -166,7 +167,9 @@ class ApiFetcher {
 			} else {
 				this._logInfo(`Stages (${stageId}) for rally (${eventId}) already saved`, 'info');
 			}
+			await this._getSplits(eventId, stageId, hasHumanId);
 		}
+		
 	}
 
 	async _getEntries(eventId, rallyHumanId) {
@@ -200,8 +203,22 @@ class ApiFetcher {
 		}
 	}
 
-	async _getSplits() {
+	async _getSplits(eventId, stageId, stageHumanId) {
+		// var rallyId = await this._getRallyId(eventId);
 
+		// for await (var splitsData of this._getData(`${eventId}/stages/${stageId}/splittimes?rallyId=${rallyId}`)) {
+
+		// 	var tempHumanId = stageHumanId;
+		// 	tempHumanId.splitPoint = splitsData.splitPointId
+
+		// 	await this._storeRecord(
+		// 		this.dbCols.split, 
+		// 		tempHumanId,
+		// 		splitsData
+		// 	);
+		// }
+
+		console.log('Splits OK');
 	}
 
 	async * _getData(urlModifier=null) {
@@ -219,6 +236,15 @@ class ApiFetcher {
 	  	} catch (error) {
 	    	console.log(error);
 	  	}
+	}
+
+	async _getRallyId(eventId) {
+		try {
+			let found = (await this.adp.findInCollection(this.dbCols.rally, {'data.eventId': eventId}))[0].data
+			return found.rallies[0].rallyId;
+		} catch (err) {
+			return -1;
+		}
 	}
 
 	async _storeRecord(col, humanId, data) {
