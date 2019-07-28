@@ -1,12 +1,13 @@
 /*
 Library imports
 */
-process.env['NODE_CONFIG_DIR'] = `${__dirname.split('/').slice(0, -1).join('/')}/config`;
+process.env['NODE_CONFIG_DIR'] = `${__dirname.split('/').slice(0, -2).join('/')}/config`;
 const config = require('config');
+const fs = require('fs');
 /*
 Own modules
 */
-const AdapterModule = require('../modules/crawler/adapter.js');
+const AdapterModule = require('../../modules/crawler/adapter.js');
 
 function parseSplitsPoints(splitPointsObj) {
 	var data = splitPointsObj.map((item) => {
@@ -46,16 +47,17 @@ function parseSplitsPoints(splitPointsObj) {
 	settings['humanId.code'] = 'SS9';
 	var stageSplits = (await adp.findInCollection(dbCols.stage, settings))[0].data.splitPoints;
 	var splitIds = parseSplitsPoints(stageSplits);
-	var merged = []
+	var merged = {}
 
 
 	for (let entry of entries) {
 		let id = entry.data.entryId;
+		var elig = entry.data.eligibility;
 
 		var record = {
 			driver		: entry.data.driver.lastName, 
 			codriver	: entry.data.codriver.lastName,
-			elig 		: entry.data.eligibility,
+			elig 		: elig,
 			splits 		: []
 		}
 
@@ -70,12 +72,24 @@ function parseSplitsPoints(splitPointsObj) {
 		/*
 		Crew might have already retired before this stage
 		*/
-		if (record.splits.length) {
-			merged.push(record);
+		try {
+			if (record.splits.length) {
+				merged[elig].push(record);
+			}
+		} catch (err) {
+			if (err.name == 'TypeError') {
+				merged[elig] = [];
+			}
 		}
 	}
 
 	console.log(merged);
+
+	fs.writeFile("test.json", JSON.stringify(merged), function(err) {
+	    if (err) {
+	        console.log(err);
+	    }
+	});
 
 	
 
