@@ -60,13 +60,14 @@ function parseSplitsPoints(splitPointsObj) {
 			elig 		: elig,
 			splits 		: []
 		}
-
+		/*
+		Find splits for each indivual entry and stage
+		*/
 		settings['data.entryId'] = id;
 		var splits = await adp.findInCollection(dbCols.split, settings);
-		//console.log(splits);
 
 		for (var split of splits) {
-			record.splits.push(split.data.elapsedDurationMs);
+			record.splits.push(split.data.splitDateTime);
 		}
 
 		/*
@@ -83,16 +84,11 @@ function parseSplitsPoints(splitPointsObj) {
 		}
 	}
 
-	console.log(merged);
-
 	fs.writeFile("test.json", JSON.stringify(merged), function(err) {
 	    if (err) {
 	        console.log(err);
 	    }
 	});
-
-	
-
 	/*
 	Manually disconnect
 	*/
